@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # 创建根路由器（带全局前缀）
-root_router = APIRouter(prefix="/com-tool")
+root_router = APIRouter(prefix="/rpg-mt")
 
 # 配置 CORS 中间件，配合scoketio的话，fastapi不能配置相同的跨域条件
 # 不然web端会报错：

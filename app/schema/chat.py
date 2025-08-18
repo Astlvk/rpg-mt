@@ -37,21 +37,5 @@ class ChatParamsCommon(BaseModel):
     # frequency_penalty: int = 0
 
 
-# class ChatParamsOpenAI(ChatParamsCommon):
-#     """OpenAI的chat model参数模型，继承自ChatParamsCommon，主要是model类型和默认值不同"""
-
-#     model: GptModelEnum = Field(
-#         default=GptModelEnum.gpt35t,
-#         description="模型名称",
-#         examples=[GptModelEnum.gpt35t],
-#     )
-
-
-# class ChatParamsZhipuAI(ChatParamsCommon):
-#     """智谱AI的chat model参数模型，继承自ChatParamsCommon，主要是model类型和默认值不同"""
-
-#     model: ZhipuAIModelEnum = Field(
-#         default=ZhipuAIModelEnum.glm3t,
-#         description="模型名称",
-#         examples=[ZhipuAIModelEnum.glm3t],
-#     )
+class ChatParamsWriter(ChatParamsCommon):
+    """剧情写作接口的参数模型，继承自ChatParamsCommon"""
