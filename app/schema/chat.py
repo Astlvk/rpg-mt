@@ -30,7 +30,7 @@ class ChatParamsCommon(BaseModel):
     temperature: float = Field(
         default=0.9, description="模型温度，取值0.0 ~ 1.0，智谱模型该参数不支持取0或1"
     )
-    max_tokens: int = Field(default=4096, description="最大令牌数", examples=[4096])
+    max_tokens: int = Field(default=65536, description="最大令牌数", examples=[65536])
     streaming: bool = Field(default=True, description="是否启用流式处理")
     # stop: List[str] = []
     # presence_penalty: int = 0
@@ -39,3 +39,9 @@ class ChatParamsCommon(BaseModel):
 
 class ChatParamsWriter(ChatParamsCommon):
     """剧情写作接口的参数模型，继承自ChatParamsCommon"""
+
+    instruction_prompt: str = Field(
+        default="",
+        description="剧情写作的指令，用于指导模型生成剧情",
+        examples=["请根据以下剧情，生成一个剧情"],
+    )

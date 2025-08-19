@@ -11,6 +11,11 @@ async def chat_writer(params: ChatParamsWriter):
         temperature=params.temperature,
         max_tokens=params.max_tokens,
         stream=params.streaming,
+        extra_body={
+            "thinking": {
+                "type": "disabled",
+            },
+        },
     )
 
     # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
