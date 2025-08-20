@@ -45,3 +45,9 @@ class ChatParamsWriter(ChatParamsCommon):
         description="剧情写作的指令，用于指导模型生成剧情",
         examples=["请根据以下剧情，生成一个剧情"],
     )
+
+    summary_prompt: str = Field(
+        default="",
+        description="摘要提示词，用于指导模型生成摘要",
+        examples=["请根据以下剧情，生成一个摘要"],
+    )
