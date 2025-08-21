@@ -3,19 +3,23 @@ from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from app.utils.logger import LoggerConfig
 from app.vector_db import weaviate_client
-from app.modules.common import router as common_router
-from app.modules.chat import router as chat_router
+from app.modules.vector_db.collection_service import create_collections
+from app.modules.common import router as router_common
+from app.modules.chat import router as router_chat
+from app.modules.vector_db import router as router_vector_db, router_summary
+from app.modules.embedding import router as router_embedding
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     LoggerConfig()
     # 这里初始化数据库
-    weaviate_client.init_weaviate_client()
+    await weaviate_client.init_weaviate_client()
+    await create_collections()
     print("app init")
     yield
     # 这可以做清理工作
-    weaviate_client.close_weaviate_client()
+    await weaviate_client.close_weaviate_client()
     print("app clean")
 
 
@@ -37,8 +41,11 @@ app.add_middleware(
     allow_headers=["*"],  # 允许所有请求头
 )
 
-root_router.include_router(common_router.router, prefix="/common", tags=["Common"])
-root_router.include_router(chat_router.router, prefix="/chat", tags=["Chat"])
+root_router.include_router(router_common.router, prefix="/common", tags=["Common"])
+root_router.include_router(router_chat.router, prefix="/chat", tags=["Chat"])
+root_router.include_router(router_embedding.router, prefix="/embedding", tags=["Embedding"])
+root_router.include_router(router_vector_db.router, prefix="/vector_db", tags=["VectorDB"])
+root_router.include_router(router_summary.router, prefix="/vector_db", tags=["VectorDB Summary"])
 
 # 挂载根路由器到主应用
 app.include_router(root_router)
