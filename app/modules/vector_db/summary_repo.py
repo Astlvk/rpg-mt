@@ -1,6 +1,7 @@
 from weaviate.classes.config import Property, DataType
 from weaviate.classes.tenants import Tenant
 from weaviate.classes.query import MetadataQuery
+from weaviate.classes.query import Sort
 from app.schema.vector_db import RagSearchModeEnum
 from app.vector_db.weaviate_client import get_weaviate_client
 from app.ai_models.embeddings import aembed_query
@@ -76,6 +77,22 @@ class SummaryTenantRepo:
         获取所有摘要，limit为返回数量
         """
         return await self.tenant_coll.query.fetch_objects(limit=limit)
+
+    async def get_summary_by_cursor(self, cursor: str | None = None, limit: int = 100):
+        """
+        基于游标的分页查询，cursor为游标，limit为返回数量
+        """
+        total_count = await self.tenant_coll.length()
+        res = await self.tenant_coll.query.fetch_objects(
+            limit=limit,
+            after=cursor,
+            sort=Sort.by_creation_time(ascending=False),
+            return_metadata=MetadataQuery.full(),
+        )
+        return {
+            "total_count": total_count,
+            "data": res.objects,
+        }
 
     async def vector_search(
         self,
