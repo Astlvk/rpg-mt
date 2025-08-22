@@ -12,6 +12,16 @@ class ChatParamsCommon(BaseModel):
         description="模型名称，目前支持openai与智谱AI提供的模型",
         examples=[ZhipuAIModelEnum.glm45flash],
     )
+    api_key: str = Field(
+        default="",
+        description="API密钥，用于调用模型",
+        examples=["4ab6d7e736d8420285d625e23acc30f5.QIJ8mAcCkwfDUym9"],
+    )
+    base_url: str = Field(
+        default="",
+        description="API地址，用于调用模型",
+        examples=["https://open.bigmodel.cn/api/paas/v4/"],
+    )
     sys_prompt: str = Field(
         default="你是一个乐于助人的智能助理。",
         description="系统提示词",
@@ -50,4 +60,20 @@ class ChatParamsWriter(ChatParamsCommon):
         default="",
         description="摘要提示词，用于指导模型生成摘要",
         examples=["请根据以下剧情，生成一个摘要"],
+    )
+
+
+class ChatParamsSummary(ChatParamsCommon):
+    """摘要接口的参数模型，继承自ChatParamsCommon"""
+
+    summary_prompt: str = Field(
+        ...,
+        description="摘要提示词，用于指导模型生成摘要",
+        examples=["请根据以上内容剧情，生成一个摘要"],
+    )
+
+    tenant_name: str = Field(
+        ...,
+        description="租户名称，用于指定摘要的租户，对应前端的sessionId",
+        examples=["sessionId"],
     )

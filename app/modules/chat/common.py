@@ -6,11 +6,16 @@ from app.ai_models.chat import get_chat_model
 
 
 async def chat(params: ChatParamsCommon):
+    """
+    通用聊天接口，用于调用模型进行对话，或者调用模型进行总结等操作
+    """
     model = get_chat_model(
         model=params.model,
+        api_key=params.api_key,
+        base_url=params.base_url,
         temperature=params.temperature,
         max_tokens=params.max_tokens,
-        stream=params.streaming,
+        # stream=params.streaming,
     )
 
     # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
@@ -46,6 +51,42 @@ async def chat(params: ChatParamsCommon):
         yield json.dumps(
             {"content": f"网络错误，请稍后重试。error: {msg}"}, ensure_ascii=False
         )
+
+
+async def chat_base(params: ChatParamsCommon):
+    """
+    基础的聊天接口，用于调用LLM，不支持流式处理
+    """
+    model = get_chat_model(
+        model=params.model,
+        api_key=params.api_key,
+        base_url=params.base_url,
+        temperature=params.temperature,
+        max_tokens=params.max_tokens,
+    )
+
+    # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
+    messages = [RcBaseMessage(role=RoleEnum.system, content=params.sys_prompt)] + [
+        msg for msg in params.messages if msg.role != RoleEnum.system
+    ]
+
+    # 需要把messages转换为BaseMessage
+    input_data: list[BaseMessage] = [
+        (
+            SystemMessage(content=message.content)
+            if message.role == RoleEnum.system
+            else (
+                AIMessage(content=message.content)
+                if message.role == RoleEnum.assistant
+                else HumanMessage(content=message.content)
+            )
+        )
+        for message in messages
+    ]
+
+    content = await model.ainvoke(input_data)
+
+    return content.content
 
 
 if __name__ == "__main__":

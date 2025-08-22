@@ -8,9 +8,10 @@ from app.ai_models.chat import get_chat_model
 async def chat_writer(params: ChatParamsWriter):
     model = get_chat_model(
         model=params.model,
+        api_key=params.api_key,
+        base_url=params.base_url,
         temperature=params.temperature,
         max_tokens=params.max_tokens,
-        stream=params.streaming,
         extra_body={
             "thinking": {
                 "type": "disabled",

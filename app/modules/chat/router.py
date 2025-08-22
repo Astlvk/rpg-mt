@@ -1,8 +1,10 @@
-from fastapi import APIRouter
+import logging
+from fastapi import APIRouter, HTTPException
 from sse_starlette import EventSourceResponse
-from app.schema.chat import ChatParamsCommon, ChatParamsWriter
+from app.schema.chat import ChatParamsCommon, ChatParamsWriter, ChatParamsSummary
 from app.modules.chat.common import chat
 from app.modules.chat.writer import chat_writer
+from app.modules.chat.summary import chat_summarize
 
 router = APIRouter()
 
@@ -17,3 +19,13 @@ async def chat_common(data: ChatParamsCommon):
 async def chat_writer_api(data: ChatParamsWriter):
     aiter = chat_writer(data)
     return EventSourceResponse(aiter)
+
+
+@router.post("/summary", summary="剧情摘要接口")
+async def chat_summary_api(data: ChatParamsSummary):
+    try:
+        res = await chat_summarize(data)
+        return {"message": "剧情摘要成功", "data": res}
+    except Exception as e:
+        logging.exception(e)
+        raise HTTPException(status_code=500, detail=f"剧情摘要失败: {str(e)}")
