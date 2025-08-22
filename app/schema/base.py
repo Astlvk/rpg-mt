@@ -19,6 +19,11 @@ class ZhipuAIModelEnum(str, Enum):
     glm45flash = "glm-4.5-flash"
 
 
+class DeepSeekModelEnum(str, Enum):
+    deepseek_chat = "deepseek-chat"
+    deepseek_reasoner = "deepseek-reasoner"
+
+
 class DeviceEnum(str, Enum):
     cpu = "cpu"
     cuda = "cuda"

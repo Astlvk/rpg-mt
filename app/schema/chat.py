@@ -1,13 +1,13 @@
 from typing import List
 from pydantic import BaseModel, Field
 from .message import RoleEnum, RcBaseMessage
-from .base import GptModelEnum, ZhipuAIModelEnum
+from .base import GptModelEnum, ZhipuAIModelEnum, DeepSeekModelEnum
 
 
 class ChatParamsCommon(BaseModel):
     """通用的chat model参数模型，用于支持多个平台模型入参"""
 
-    model: GptModelEnum | ZhipuAIModelEnum = Field(
+    model: GptModelEnum | ZhipuAIModelEnum | DeepSeekModelEnum = Field(
         default=ZhipuAIModelEnum.glm45flash,
         description="模型名称，目前支持openai与智谱AI提供的模型",
         examples=[ZhipuAIModelEnum.glm45flash],

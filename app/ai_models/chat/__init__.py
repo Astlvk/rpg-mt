@@ -9,6 +9,7 @@ def get_chat_model(model: str, api_key: str, base_url: str, **kwargs):
         model=model,
         model_provider="openai",
         base_url=base_url,
+        api_key=api_key,
         configurable_fields=("api_key", api_key),
         **kwargs,
     )
