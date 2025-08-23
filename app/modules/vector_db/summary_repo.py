@@ -2,7 +2,7 @@ from weaviate.classes.config import Property, DataType
 from weaviate.classes.tenants import Tenant
 from weaviate.classes.query import MetadataQuery
 from weaviate.classes.query import Sort
-from app.schema.vector_db import RagSearchModeEnum
+from app.schema.vector_db import SummarySearchModeEnum
 from app.vector_db.weaviate_client import get_weaviate_client
 from app.ai_models.embeddings import aembed_query
 
@@ -72,66 +72,178 @@ class SummaryTenantRepo:
     async def delete_summary(self, id: str):
         return await self.tenant_coll.data.delete_by_id(id)
 
+    async def get_summary_by_id(self, id: str):
+        """
+        根据id获取摘要对象
+        """
+        return await self.tenant_coll.query.fetch_object_by_id(id)
+
     async def get_summaries(self, limit: int = 10):
         """
         获取所有摘要，limit为返回数量
         """
-        return await self.tenant_coll.query.fetch_objects(limit=limit)
+        return await self.tenant_coll.query.fetch_objects(
+            sort=Sort.by_update_time(ascending=False),
+            limit=limit,
+            return_metadata=MetadataQuery.full(),
+        )
+
+    async def get_summaries_offset(self, size: int = 10, page: int = 1):
+        """
+        获取所有摘要，offset分页形式，size为每页数量，page为页码
+        """
+        assert page >= 1 and size >= 1
+        total = await self.tenant_coll.length()
+        res = await self.tenant_coll.query.fetch_objects(
+            sort=Sort.by_update_time(ascending=False),
+            limit=size,
+            offset=(page - 1) * size,
+            return_metadata=MetadataQuery.full(),
+        )
+
+        res_data = []
+        for obj in res.objects:
+            res_data.append(
+                {
+                    "uuid": str(obj.uuid),
+                    "summary": str(obj.properties["summary"]),
+                    "created_at": (
+                        obj.metadata.creation_time.astimezone().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if obj.metadata.creation_time
+                        else None
+                    ),
+                    "updated_at": (
+                        obj.metadata.last_update_time.astimezone().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if obj.metadata.last_update_time
+                        else None
+                    ),
+                }
+            )
+
+        return {"total": total, "data": res_data}
 
     async def get_summary_by_cursor(self, cursor: str | None = None, limit: int = 100):
         """
         基于游标的分页查询，cursor为游标，limit为返回数量
         """
-        total_count = await self.tenant_coll.length()
+        total = await self.tenant_coll.length()
         res = await self.tenant_coll.query.fetch_objects(
             limit=limit,
             after=cursor,
-            sort=Sort.by_creation_time(ascending=False),
             return_metadata=MetadataQuery.full(),
         )
-        return {
-            "total_count": total_count,
-            "data": res.objects,
-        }
 
-    async def vector_search(
+        res_data = []
+        for obj in res.objects:
+            res_data.append(
+                {
+                    "uuid": str(obj.uuid),
+                    "summary": str(obj.properties["summary"]),
+                    "created_at": (
+                        obj.metadata.creation_time.astimezone().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if obj.metadata.creation_time
+                        else None
+                    ),
+                    "updated_at": (
+                        obj.metadata.last_update_time.astimezone().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if obj.metadata.last_update_time
+                        else None
+                    ),
+                }
+            )
+
+        return {"total": total, "data": res_data}
+
+    async def summary_search(
         self,
         query: str,
-        mode: RagSearchModeEnum = RagSearchModeEnum.similarity,
+        mode: SummarySearchModeEnum = SummarySearchModeEnum.similarity,
         distance: float = 0.5,
-        k: int = 5,
+        top_k: int = 10,
     ):
         """
         向量搜索，返回相似度最高的k个摘要，支持相似度搜索和混合搜索
         """
-        if mode == RagSearchModeEnum.similarity:
-            return await self.similarity_search(query, distance, k)
-        elif mode == RagSearchModeEnum.hybrid:
-            return await self.hybrid_search(query, distance, k)
+        res = None
+        if mode == SummarySearchModeEnum.keyword:
+            res = await self.keyword_search(query, top_k)
+        elif mode == SummarySearchModeEnum.similarity:
+            res = await self.similarity_search(query, distance, top_k)
+        elif mode == SummarySearchModeEnum.hybrid:
+            res = await self.hybrid_search(query, distance, top_k)
 
-    async def similarity_search(self, query: str, distance: float = 0.5, k: int = 5):
+        res_data = []
+        for obj in res.objects if res else []:
+            res_data.append(
+                {
+                    "uuid": str(obj.uuid),
+                    "summary": str(obj.properties["summary"]),
+                    "created_at": (
+                        obj.metadata.creation_time.astimezone().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if obj.metadata.creation_time
+                        else None
+                    ),
+                    "updated_at": (
+                        obj.metadata.last_update_time.astimezone().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if obj.metadata.last_update_time
+                        else None
+                    ),
+                    "score": obj.metadata.score,
+                    "distance": obj.metadata.distance,
+                }
+            )
+
+        return {"total": len(res_data), "data": res_data}
+
+    async def keyword_search(self, query: str, top_k: int = 10):
+        """
+        关键字搜索，返回包含关键字的摘要
+        """
+        return await self.tenant_coll.query.bm25(
+            query=query,
+            query_properties=["summary"],
+            limit=top_k,
+            return_metadata=MetadataQuery.full(),
+        )
+
+    async def similarity_search(
+        self, query: str, distance: float = 0.5, top_k: int = 10
+    ):
         """
         相似度搜索，返回相似度最高的k个摘要
         """
         query_embed = await aembed_query(query)
         return await self.tenant_coll.query.near_vector(
             near_vector=query_embed,
-            limit=k,
+            limit=top_k,
             distance=distance,
             target_vector="vector",
             return_metadata=MetadataQuery.full(),
         )
 
-    async def hybrid_search(self, query: str, distance: float = 0.5, k: int = 5):
+    async def hybrid_search(self, query: str, distance: float = 0.5, top_k: int = 10):
         """
         混合搜索，返回相似度最高的k个摘要
         """
         query_embed = await aembed_query(query)
         return await self.tenant_coll.query.hybrid(
             query=query,
+            query_properties=["summary"],
             vector=query_embed,
             target_vector="vector",
             max_vector_distance=distance,
-            limit=k,
+            limit=top_k,
             return_metadata=MetadataQuery.full(),
         )

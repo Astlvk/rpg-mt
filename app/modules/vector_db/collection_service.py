@@ -1,5 +1,4 @@
-from weaviate.classes.config import Property, DataType
-from weaviate.classes.config import Configure
+from weaviate.classes.config import Property, DataType, Configure, Tokenization
 from weaviate.collections.classes.config_vectors import _VectorConfigCreate
 from app.vector_db.weaviate_client import get_weaviate_client
 from .summary_repo import COLLECTION_NAME
@@ -27,6 +26,7 @@ class CollectionService:
                 multi_tenancy_config=Configure.multi_tenancy(enabled=multi_tenancy),
                 vector_config=vector_config,
             )
+            print(f"Collection {name} created")
         else:
             print(f"Collection {name} already exists")
 
@@ -43,7 +43,11 @@ async def create_collections():
         name=COLLECTION_NAME,
         description="摘要",
         properties=[
-            Property(name="summary", data_type=DataType.TEXT),
+            Property(
+                name="summary",
+                data_type=DataType.TEXT,
+                tokenization=Tokenization.GSE,
+            ),
         ],
         vector_config=[
             Configure.Vectors.self_provided(name="vector"),
