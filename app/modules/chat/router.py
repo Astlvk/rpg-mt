@@ -2,7 +2,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from sse_starlette import EventSourceResponse
 from app.schema.chat import ChatParamsCommon, ChatParamsWriter, ChatParamsSummary
-from app.modules.chat.common import chat
+from app.modules.chat.common import chat, chat_base
 from app.modules.chat.writer import chat_writer
 from app.modules.chat.summary import chat_summarize
 
@@ -13,6 +13,18 @@ router = APIRouter()
 async def chat_common(data: ChatParamsCommon):
     aiter = chat(data)
     return EventSourceResponse(aiter)
+
+@router.post("/base", summary="基础对话接口，非流式（streaming参数无效），用于支持一次性内容生成")
+async def chat_base_api(data: ChatParamsCommon):
+    """
+    基础对话接口，适用于简单的对话场景。
+    """
+    try:
+        res = await chat_base(data)
+        return {"message": "success", "data": res}
+    except Exception as e:
+        logging.exception(e)
+        raise HTTPException(status_code=500, detail=f"基础对话失败: {str(e)}")
 
 
 @router.post("/writer", summary="剧情写作接口")
