@@ -2,6 +2,7 @@ from typing import List
 from pydantic import BaseModel, Field
 from .message import RoleEnum, RcBaseMessage
 from .base import GptModelEnum, ZhipuAIModelEnum, DeepSeekModelEnum
+from app.schema.vector_db import SummarySearchModeEnum
 
 
 class ChatParamsCommon(BaseModel):
@@ -50,10 +51,40 @@ class ChatParamsCommon(BaseModel):
 class ChatParamsWriter(ChatParamsCommon):
     """剧情写作接口的参数模型，继承自ChatParamsCommon"""
 
+    tenant_name: str = Field(
+        ...,
+        description="租户名称，用于指定摘要的租户，对应前端的sessionId",
+        examples=["sessionId"],
+    )
+
+    enable_retriever: bool = Field(
+        default=True,
+        description="是否启用记忆检索",
+        examples=[True],
+    )
+
+    retriever_mode: SummarySearchModeEnum = Field(
+        default=SummarySearchModeEnum.similarity,
+        description="检索方式",
+        examples=[SummarySearchModeEnum.similarity],
+    )
+
+    distance: float = Field(
+        default=0.5,
+        description="检索距离",
+        examples=[0.5],
+    )
+
+    top_k: int = Field(
+        default=10,
+        description="检索数量",
+        examples=[10],
+    )
+
     instruction_prompt: str = Field(
         default="",
         description="剧情写作的指令，用于指导模型生成剧情",
-        examples=["请根据以下剧情，生成一个剧情"],
+        examples=["请根据对话内容剧情，生成下一段剧情"],
     )
 
     summary_prompt: str = Field(
@@ -69,7 +100,7 @@ class ChatParamsSummary(ChatParamsCommon):
     summary_prompt: str = Field(
         ...,
         description="摘要提示词，用于指导模型生成摘要",
-        examples=["请根据以上内容剧情，生成一个摘要"],
+        examples=["请根据对话内容剧情，生成一个摘要"],
     )
 
     tenant_name: str = Field(

@@ -2,7 +2,8 @@ from weaviate.classes.config import Property, DataType
 from weaviate.classes.tenants import Tenant
 from weaviate.classes.query import MetadataQuery
 from weaviate.classes.query import Sort
-from app.schema.vector_db import SummarySearchModeEnum
+from app.schema.vector_db import SummarySearchModeEnum, SummarySearchResult
+from app.schema.api import ApiResponse
 from app.vector_db.weaviate_client import get_weaviate_client
 from app.ai_models.embeddings import aembed_query
 
@@ -180,7 +181,7 @@ class SummaryTenantRepo:
         elif mode == SummarySearchModeEnum.hybrid:
             res = await self.hybrid_search(query, distance, top_k)
 
-        res_data = []
+        res_data: list[SummarySearchResult] = []
         for obj in res.objects if res else []:
             res_data.append(
                 {
@@ -205,7 +206,7 @@ class SummaryTenantRepo:
                 }
             )
 
-        return {"total": len(res_data), "data": res_data}
+        return ApiResponse(total=len(res_data), data=res_data)
 
     async def keyword_search(self, query: str, top_k: int = 10):
         """

@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from sse_starlette import EventSourceResponse
 from app.schema.chat import ChatParamsCommon, ChatParamsWriter, ChatParamsSummary
 from app.modules.chat.common import chat, chat_base
-from app.modules.chat.writer import chat_writer
+from app.modules.chat.writer import chat_writer, WriterAgent
 from app.modules.chat.summary import chat_summarize
 
 router = APIRouter()
@@ -32,6 +32,12 @@ async def chat_writer_api(data: ChatParamsWriter):
     aiter = chat_writer(data)
     return EventSourceResponse(aiter)
 
+
+@router.post("/writer-agent", summary="剧情写作接口（使用agent）")
+async def chat_writer_agent_api(data: ChatParamsWriter):
+    agent = WriterAgent(data)
+    aiter = agent.run()
+    return EventSourceResponse(aiter)
 
 @router.post("/summary", summary="剧情摘要接口")
 async def chat_summary_api(data: ChatParamsSummary):

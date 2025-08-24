@@ -1,8 +1,122 @@
 import json
 import logging
+from typing import cast
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
+from langchain_core.messages.ai import AIMessageChunk
+from langchain_core.tools import tool
+from langgraph.prebuilt import create_react_agent
 from app.schema.chat import ChatParamsWriter, RcBaseMessage, RoleEnum
 from app.ai_models.chat import get_chat_model
+from app.modules.vector_db.summary_repo import SummaryTenantRepo
+
+
+class WriterAgent:
+    def __init__(self, params: ChatParamsWriter):
+        self.docs = []
+        self.params = params
+        self.model = get_chat_model(
+            model=params.model,
+            api_key=params.api_key,
+            base_url=params.base_url,
+            temperature=params.temperature,
+            max_tokens=params.max_tokens,
+            extra_body={
+                "thinking": {
+                    "type": "enabled",
+                },
+            },
+        )
+        # 如果启用记忆检索，则添加记忆检索工具
+        tools = [self.query_memory_wrap()] if self.params.enable_retriever else []
+        self.agent = create_react_agent(
+            model=self.model,
+            tools=tools,
+            prompt=self.params.sys_prompt,
+            debug=False,
+        )
+
+    async def run(self):
+        # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
+        messages = [
+            RcBaseMessage(role=RoleEnum.system, content=self.params.sys_prompt)
+        ] + [msg for msg in self.params.messages if msg.role != RoleEnum.system]
+
+        # 需要把messages转换为BaseMessage
+        input_data: list[BaseMessage] = [
+            (
+                SystemMessage(content=message.content)
+                if message.role == RoleEnum.system
+                else (
+                    AIMessage(content=message.content)
+                    if message.role == RoleEnum.assistant
+                    else HumanMessage(content=message.content)
+                )
+            )
+            for message in messages
+        ]
+
+        try:
+            if self.params.streaming:
+                aiter = self.agent.astream(
+                    {"messages": input_data},
+                    stream_mode="messages",
+                )
+                async for item, metadata in aiter:
+                    # print(type(item))
+                    # print(item)
+                    # print(type(metadata))
+                    # print(metadata)
+                    # print("")
+                    if isinstance(item, AIMessageChunk):
+                        # yield item.content
+                        yield json.dumps({"content": item.content}, ensure_ascii=False)
+                    else:
+                        yield item
+                # 流式返回检索到的摘要
+                yield json.dumps({"docs": self.docs}, ensure_ascii=False)
+                self.docs = []
+            else:
+                content = await self.agent.ainvoke(
+                    {"messages": input_data},
+                    stream_mode="messages",
+                )
+                # yield json.dumps({"content": content.content}, ensure_ascii=False)
+                yield content
+        except Exception as e:
+            logging.exception(e)
+            msg = repr(e)
+            yield json.dumps(
+                {"content": f"网络错误，请稍后重试。error: {msg}"}, ensure_ascii=False
+            )
+
+    def query_memory_wrap(self):
+        @tool(parse_docstring=True)
+        async def query_memory(query: str):
+            """
+            查询历史记忆，使用相似性搜索检索与用户对话相关的记忆（历史摘要）。
+
+            Args:
+                query: 查询内容，用于检索与用户对话相关的记忆（历史摘要）。
+
+            Returns:
+                list[str]: 查询到的记忆（历史摘要）。
+            """
+            print("query_summary", query)
+            repo = SummaryTenantRepo(self.params.tenant_name)
+            res = await repo.summary_search(
+                query=query,
+                mode=self.params.retriever_mode,
+                distance=self.params.distance,
+                top_k=self.params.top_k,
+            )
+            # 保存检索到的摘要，用于流式返回
+            self.docs = res["data"]
+            summaries: list[str] = []
+            for summary in self.docs:
+                summaries.append(summary["summary"])
+            return summaries
+
+        return query_memory
 
 
 async def chat_writer(params: ChatParamsWriter):
