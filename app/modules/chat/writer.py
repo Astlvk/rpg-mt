@@ -62,17 +62,16 @@ class WriterAgent:
                     stream_mode="messages",
                 )
                 async for item, metadata in aiter:
-                    # print(type(item))
-                    # print(item)
-                    # print(type(metadata))
-                    # print(metadata)
-                    # print("")
                     if isinstance(item, AIMessageChunk):
                         # yield item.content
                         yield json.dumps({"content": item.content}, ensure_ascii=False)
                     else:
-                        yield item
+                        # yield item
+                        print("item==================================================")
+                        print(item)
+                        pass
                 # 流式返回检索到的摘要
+                print(self.docs)
                 yield json.dumps({"docs": self.docs}, ensure_ascii=False)
                 self.docs = []
             else:
@@ -80,8 +79,7 @@ class WriterAgent:
                     {"messages": input_data},
                     stream_mode="messages",
                 )
-                # yield json.dumps({"content": content.content}, ensure_ascii=False)
-                yield content
+                yield json.dumps({"content": content}, ensure_ascii=False)
         except Exception as e:
             logging.exception(e)
             msg = repr(e)
@@ -101,7 +99,7 @@ class WriterAgent:
             Returns:
                 list[str]: 查询到的记忆（历史摘要）。
             """
-            print("query_summary", query)
+            print("query_summary============================", query)
             repo = SummaryTenantRepo(self.params.tenant_name)
             res = await repo.summary_search(
                 query=query,
@@ -109,11 +107,20 @@ class WriterAgent:
                 distance=self.params.distance,
                 top_k=self.params.top_k,
             )
+
+            docs = res["data"]
+
             # 保存检索到的摘要，用于流式返回
-            self.docs = res["data"]
-            summaries: list[str] = []
-            for summary in self.docs:
-                summaries.append(summary["summary"])
+            self.docs.append(
+                {
+                    "query": query,
+                    "summaries": docs,
+                }
+            )
+
+            # 取出摘要数据
+            summaries: list[str] = [summary["summary"] for summary in docs]
+
             return summaries
 
         return query_memory
