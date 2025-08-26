@@ -93,6 +93,12 @@ class ChatParamsWriter(ChatParamsCommon):
         examples=["请根据以下剧情，生成一个摘要"],
     )
 
+    query_tool_prompt: str | None = Field(
+        default=None,
+        description="检索工具提示词，用于描述提供给LLM的检索工具",
+        examples=["请根据剧情，从历史剧情中查询相关内容，用于剧情写作"],
+    )
+
 
 class ChatParamsSummary(ChatParamsCommon):
     """摘要接口的参数模型，继承自ChatParamsCommon"""

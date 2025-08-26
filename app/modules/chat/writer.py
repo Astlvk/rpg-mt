@@ -38,8 +38,16 @@ class WriterAgent:
     async def run(self):
         # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
         messages = [
-            RcBaseMessage(role=RoleEnum.system, content=self.params.sys_prompt)
+            # RcBaseMessage(role=RoleEnum.system, content=self.params.sys_prompt)
         ] + [msg for msg in self.params.messages if msg.role != RoleEnum.system]
+
+        # 如果存在instruction_prompt，则添加到messages中
+        if self.params.instruction_prompt:
+            messages.append(
+                RcBaseMessage(
+                    role=RoleEnum.user, content=self.params.instruction_prompt
+                )
+            )
 
         # 需要把messages转换为BaseMessage
         input_data: list[BaseMessage] = [
@@ -88,7 +96,10 @@ class WriterAgent:
             )
 
     def query_memory_wrap(self):
-        @tool(parse_docstring=True)
+        # 额外的工具描述，提供则使用
+        desc = self.params.query_tool_prompt or None
+
+        @tool(parse_docstring=True, description=desc)
         async def query_memory(query: str):
             """
             查询历史记忆，使用相似性搜索检索与用户对话相关的记忆（历史摘要）。
@@ -99,29 +110,32 @@ class WriterAgent:
             Returns:
                 list[str]: 查询到的记忆（历史摘要）。
             """
-            print("query_summary============================", query)
-            repo = SummaryTenantRepo(self.params.tenant_name)
-            res = await repo.summary_search(
-                query=query,
-                mode=self.params.retriever_mode,
-                distance=self.params.distance,
-                top_k=self.params.top_k,
-            )
+            try:
+                repo = SummaryTenantRepo(self.params.tenant_name)
+                res = await repo.summary_search(
+                    query=query,
+                    mode=self.params.retriever_mode,
+                    distance=self.params.distance,
+                    top_k=self.params.top_k,
+                )
 
-            docs = res["data"]
+                docs = res["data"]
 
-            # 保存检索到的摘要，用于流式返回
-            self.docs.append(
-                {
-                    "query": query,
-                    "summaries": docs,
-                }
-            )
+                # 保存检索到的摘要，用于流式返回
+                self.docs.append(
+                    {
+                        "query": query,
+                        "summaries": docs,
+                    }
+                )
 
-            # 取出摘要数据
-            summaries: list[str] = [summary["summary"] for summary in docs]
+                # 取出摘要数据
+                summaries: list[str] = [summary["summary"] for summary in docs]
 
-            return summaries
+                return summaries
+            except Exception as e:
+                logging.exception(e)
+                return []
 
         return query_memory
 
