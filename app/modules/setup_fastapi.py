@@ -9,7 +9,7 @@ def build_params(prod: bool = False):
 
     params = {
         "host": "127.0.0.1",
-        "port": 3307,
+        "port": 4902,
         "reload": True,
         "app": "app.modules.main:app",
         "log_config": LOGGING_CONFIG,
@@ -19,8 +19,8 @@ def build_params(prod: bool = False):
 
     if prod:
         env["is_prod"] = True
-        params["host"] = "127.0.0.1"
-        params["port"] = 3307
+        params["host"] = "0.0.0.0"
+        params["port"] = 4902
         params["reload"] = False
 
     return params

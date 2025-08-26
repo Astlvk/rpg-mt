@@ -2,7 +2,7 @@ import os
 import httpx
 import asyncio
 
-bgem3_url = os.getenv("BGE_M3_URL", "http://127.0.0.1:4900/ai-model-service")
+bgem3_url = os.getenv("BGE_M3_URL", "http://127.0.0.1:4901/ai-model-service")
 
 
 async def aembed_documents(texts: list[str]) -> list[list[float]]:

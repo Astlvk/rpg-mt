@@ -75,8 +75,8 @@ class WriterAgent:
                         yield json.dumps({"content": item.content}, ensure_ascii=False)
                     else:
                         # yield item
-                        print("item==================================================")
-                        print(item)
+                        print("function_call================================")
+                        # print(item)
                         pass
                 # 流式返回检索到的摘要
                 print(self.docs)
