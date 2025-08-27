@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from app.modules.static_service import run as run_static_service
 from app.utils.logger import LoggerConfig
 from app.vector_db import weaviate_client
 from app.modules.vector_db.collection_service import create_collections
@@ -25,6 +27,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+run_static_service(app)
+
 # 创建根路由器（带全局前缀）
 root_router = APIRouter(prefix="/rpg-mt")
 
@@ -43,9 +47,15 @@ app.add_middleware(
 
 root_router.include_router(router_common.router, prefix="/common", tags=["Common"])
 root_router.include_router(router_chat.router, prefix="/chat", tags=["Chat"])
-root_router.include_router(router_embedding.router, prefix="/embedding", tags=["Embedding"])
-root_router.include_router(router_vector_db.router, prefix="/vector_db", tags=["VectorDB"])
-root_router.include_router(router_summary.router, prefix="/vector_db", tags=["VectorDB Summary"])
+root_router.include_router(
+    router_embedding.router, prefix="/embedding", tags=["Embedding"]
+)
+root_router.include_router(
+    router_vector_db.router, prefix="/vector_db", tags=["VectorDB"]
+)
+root_router.include_router(
+    router_summary.router, prefix="/vector_db", tags=["VectorDB Summary"]
+)
 
 # 挂载根路由器到主应用
 app.include_router(root_router)
