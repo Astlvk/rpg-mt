@@ -11,4 +11,4 @@ logs/
 # Virtual environments
 .venv
 
-.web_ui/
+web_ui/
