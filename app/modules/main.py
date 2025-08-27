@@ -27,8 +27,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-run_static_service(app)
-
 # 创建根路由器（带全局前缀）
 root_router = APIRouter(prefix="/rpg-mt")
 
@@ -59,6 +57,9 @@ root_router.include_router(
 
 # 挂载根路由器到主应用
 app.include_router(root_router)
+
+# 挂载静态文件
+run_static_service(app)
 
 if __name__ == "__main__":
     print("world")
