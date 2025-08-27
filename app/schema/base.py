@@ -24,6 +24,10 @@ class DeepSeekModelEnum(str, Enum):
     deepseek_reasoner = "deepseek-reasoner"
 
 
+class QwenModelEnum(str, Enum):
+    q4km_gguf = "q4_k_m.gguf"
+
+
 class DeviceEnum(str, Enum):
     cpu = "cpu"
     cuda = "cuda"
