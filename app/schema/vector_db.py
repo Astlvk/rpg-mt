@@ -15,3 +15,8 @@ class SummarySearchResult(TypedDict):
     score: float | None
     created_at: str | None
     updated_at: str | None
+
+class TenantInfo(TypedDict):
+    name: str
+    data_count: int
+    activityStatus: str

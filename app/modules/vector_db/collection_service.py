@@ -47,6 +47,30 @@ async def create_collections():
                 name="summary",
                 data_type=DataType.TEXT,
                 tokenization=Tokenization.GSE,
+                description="摘要内容",
+            ),
+            Property(
+                name="turn",
+                data_type=DataType.INT,
+                description="对话轮次，用于记录摘要的产生的回合，对应前端的turn",
+            ),
+            Property(
+                name="marged_summary",
+                data_type=DataType.OBJECT_ARRAY,
+                skip_vectorization=True,
+                nested_properties=[
+                    Property(
+                        name="summary",
+                        data_type=DataType.TEXT,
+                        description="被合并的相似摘要内容",
+                    ),
+                    Property(
+                        name="turn",
+                        data_type=DataType.INT,
+                        description="被合并的相似摘要的回合数",
+                    ),
+                ],
+                description="记录摘要更新时被合并的相似摘要数据",
             ),
         ],
         vector_config=[

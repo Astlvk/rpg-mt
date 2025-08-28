@@ -114,3 +114,9 @@ class ChatParamsSummary(ChatParamsCommon):
         description="租户名称，用于指定摘要的租户，对应前端的sessionId",
         examples=["sessionId"],
     )
+
+    turn: int | None = Field(
+        default=None,
+        description="可选的，对话轮次，用于记录摘要的产生的回合，对应前端的turn",
+        examples=[None, 0],
+    )

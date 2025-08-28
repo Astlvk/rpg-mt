@@ -2,7 +2,8 @@ from weaviate.classes.config import Property, DataType
 from weaviate.classes.tenants import Tenant
 from weaviate.classes.query import MetadataQuery
 from weaviate.classes.query import Sort
-from app.schema.vector_db import SummarySearchModeEnum, SummarySearchResult
+from weaviate.collections import tenants
+from app.schema.vector_db import SummarySearchModeEnum, SummarySearchResult, TenantInfo
 from app.schema.api import ApiResponse
 from app.vector_db.weaviate_client import get_weaviate_client
 from app.ai_models.embeddings import aembed_query
@@ -33,9 +34,22 @@ class SummaryTenantMgt:
 
     async def get_tenants(self):
         """
-        获取所有租户
+        获取所有租户，并为每个租户添加数据量字段
         """
-        return await self.collection.tenants.get()
+        tenants = await self.collection.tenants.get()
+        tenants_dict: dict[str, TenantInfo] = {}
+
+        for key, tenant in tenants.items():
+            tenant_coll = self.collection.with_tenant(key)
+            data_count = await tenant_coll.length()
+            print(tenant)
+            tenants_dict[key] = {
+                "name": key,
+                "data_count": data_count,
+                "activityStatus": tenant.activityStatus,
+            }
+
+        return tenants_dict
 
 
 class SummaryTenantRepo:
