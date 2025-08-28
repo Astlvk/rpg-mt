@@ -120,3 +120,27 @@ class ChatParamsSummary(ChatParamsCommon):
         description="可选的，对话轮次，用于记录摘要的产生的回合，对应前端的turn",
         examples=[None, 0],
     )
+
+    enable_update: bool = Field(
+        default=False,
+        description="是否启用更新摘要",
+        examples=[False],
+    )
+
+    distance: float = Field(
+        default=0.3,
+        description="更新摘要时用于搜索的相似性距离",
+        examples=[0.3],
+    )
+
+    top_k: int = Field(
+        default=10,
+        description="更新摘要时用于搜索的摘要数量",
+        examples=[10],
+    )
+
+    merge_prompt: str = Field(
+        default="",
+        description="合并提示词，用于指导模型合并摘要",
+        examples=["请根据以下摘要，合并成新的摘要"],
+    )

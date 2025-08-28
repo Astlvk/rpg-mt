@@ -16,6 +16,15 @@ async def chat_summarize(params: ChatParamsSummary):
     ]
     params.messages = messages
     content = await chat_base(params)
+    # TODO: 摘要合并
+    # 使用content做相似性搜索，距离设置0.3
+    # 如果搜索出摘要，使用llm合并content与历史摘要
+    # 如果搜索不出摘要，直接添加到摘要库中
+    # 参数扩展：
+    # 1. 是否开启更新
+    # 2. distance
+    # 3. 合并用提示词
+    await update_summary(params, content)
 
     repo = SummaryTenantRepo(params.tenant_name)
     if isinstance(content, str):
@@ -26,3 +35,7 @@ async def chat_summarize(params: ChatParamsSummary):
         }
     else:
         raise ValueError("summary content is not a string")
+
+async def update_summary(params: ChatParamsSummary, new_summary: str):
+    # TODO: 更新摘要
+    pass
