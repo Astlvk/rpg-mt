@@ -88,9 +88,19 @@ class SummaryTenantRepo:
         """根据id获取摘要对象"""
         return await self.tenant_coll.query.fetch_object_by_id(id)
 
-    async def update_summary(self, summary: str):
-        # TODO: 更新摘要
-        pass
+    async def update_summary(self, uuid: str, summary: str, turn: int | None = None):
+        # 更新摘要
+        summary_embed = await aembed_query(summary)
+        return await self.tenant_coll.data.update(
+            uuid=uuid,
+            properties={
+                "summary": summary,
+                "turn": turn,
+            },
+            vector={
+                "vector": summary_embed,
+            },
+        )
 
     async def delete_summary(self, id: str):
         return await self.tenant_coll.data.delete_by_id(id)
@@ -130,6 +140,7 @@ class SummaryTenantRepo:
                 {
                     "uuid": str(obj.uuid),
                     "summary": str(obj.properties["summary"]),
+                    "turn": obj.properties.get("turn", None),
                     "created_at": (
                         obj.metadata.creation_time.astimezone().strftime(
                             "%Y-%m-%d %H:%M:%S"
@@ -166,6 +177,7 @@ class SummaryTenantRepo:
                 {
                     "uuid": str(obj.uuid),
                     "summary": str(obj.properties["summary"]),
+                    "turn": obj.properties.get("turn", None),
                     "created_at": (
                         obj.metadata.creation_time.astimezone().strftime(
                             "%Y-%m-%d %H:%M:%S"
@@ -209,7 +221,7 @@ class SummaryTenantRepo:
                 {
                     "uuid": str(obj.uuid),
                     "summary": obj.properties["summary"],
-                    "turn": obj.properties["turn"],
+                    "turn": obj.properties.get("turn", None),
                     "created_at": (
                         obj.metadata.creation_time.astimezone().strftime(
                             "%Y-%m-%d %H:%M:%S"

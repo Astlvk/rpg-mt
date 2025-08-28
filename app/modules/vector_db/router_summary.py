@@ -68,6 +68,26 @@ async def add_summary(
         raise HTTPException(status_code=500, detail=f"新增摘要失败: {str(e)}")
 
 
+# 更新摘要
+@router.put("/summary/{tenant_name}/{summary_id}", summary="更新摘要")
+async def update_summary(
+    tenant_name: str,
+    summary_id: str,
+    summary: str = Body(..., embed=True, description="摘要内容"),
+    turn: int | None = Body(None, embed=True, description="对话轮次"),
+):
+    """
+    更新摘要
+    """
+    try:
+        repo = SummaryTenantRepo(tenant_name)
+        await repo.update_summary(summary_id, summary, turn=turn)
+        return {"message": f"摘要 {summary_id} 更新成功"}
+    except Exception as e:
+        logging.exception(e)
+        raise HTTPException(status_code=500, detail=f"更新摘要失败: {str(e)}")
+
+
 @router.delete("/summary/{tenant_name}/{summary_id}", summary="删除摘要")
 async def delete_summary(tenant_name: str, summary_id: str):
     """

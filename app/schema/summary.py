@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, NotRequired
 from enum import Enum
 
 
@@ -10,7 +10,7 @@ class SummarySearchModeEnum(str, Enum):
 
 class SummaryDataModel(TypedDict):
     summary: str
-    turn: int | None
+    turn: NotRequired[int | None]
 
 
 class SummarySearchResult(TypedDict):

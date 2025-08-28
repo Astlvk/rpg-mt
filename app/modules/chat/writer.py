@@ -72,6 +72,8 @@ class WriterAgent:
                 )
                 async for item, metadata in aiter:
                     if isinstance(item, AIMessageChunk):
+                        # print(item)
+
                         usage_metadata = item.usage_metadata
 
                         if usage_metadata:
