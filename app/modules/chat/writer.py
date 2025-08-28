@@ -72,14 +72,27 @@ class WriterAgent:
                 )
                 async for item, metadata in aiter:
                     if isinstance(item, AIMessageChunk):
-                        # yield item.content
-                        yield json.dumps({"content": item.content}, ensure_ascii=False)
+                        usage_metadata = item.usage_metadata
+
+                        if usage_metadata:
+                            usage_metadata = {
+                                "inputTokens": usage_metadata["input_tokens"],
+                                "outputTokens": usage_metadata["output_tokens"],
+                                "totalTokens": usage_metadata["total_tokens"],
+                            }
+
+                        yield json.dumps(
+                            {
+                                "content": item.content,
+                                "usageMetadata": usage_metadata,
+                            },
+                            ensure_ascii=False,
+                        )
                     else:
                         # yield item
                         print("function_call================================")
                         # print(item)
                 # 流式返回检索到的摘要
-                # print(self.docs)
                 yield json.dumps({"docs": self.docs}, ensure_ascii=False)
                 self.docs = []
             else:
