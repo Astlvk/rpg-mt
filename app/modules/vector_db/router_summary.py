@@ -52,14 +52,16 @@ async def delete_tenant(tenant_name: str):
 
 @router.post("/summary/{tenant_name}", summary="新增摘要")
 async def add_summary(
-    tenant_name: str, summary: str = Body(..., embed=True, description="摘要内容")
+    tenant_name: str,
+    summary: str = Body(..., embed=True, description="摘要内容"),
+    turn: int | None = Body(None, embed=True, description="对话轮次"),
 ):
     """
     新增摘要
     """
     try:
         repo = SummaryTenantRepo(tenant_name)
-        result = await repo.add_summary(summary)
+        result = await repo.add_summary(summary, turn=turn)
         return {"message": "摘要添加成功", "id": result}
     except Exception as e:
         logging.exception(e)

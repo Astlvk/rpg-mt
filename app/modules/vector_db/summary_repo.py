@@ -62,14 +62,15 @@ class SummaryTenantRepo:
         self.collection = self.client.collections.get(COLLECTION_NAME)
         self.tenant_coll = self.collection.with_tenant(tenant_name)
 
-    async def add_summary(self, summary: str):
+    async def add_summary(self, summary: str, turn: int | None = None):
         """
-        添加摘要，返回插入的id
+        添加摘要，向量化，返回插入的id
         """
         summary_embed = await aembed_query(summary)
         return await self.tenant_coll.data.insert(
             properties={
                 "summary": summary,
+                "turn": turn,
             },
             vector={
                 "vector": summary_embed,

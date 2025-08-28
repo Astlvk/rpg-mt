@@ -57,7 +57,6 @@ async def create_collections():
             Property(
                 name="marged_summary",
                 data_type=DataType.OBJECT_ARRAY,
-                skip_vectorization=True,
                 nested_properties=[
                     Property(
                         name="summary",

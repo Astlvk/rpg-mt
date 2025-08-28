@@ -19,7 +19,7 @@ async def chat_summarize(params: ChatParamsSummary):
 
     repo = SummaryTenantRepo(params.tenant_name)
     if isinstance(content, str):
-        id = await repo.add_summary(content)
+        id = await repo.add_summary(content, turn=params.turn)
         return {
             "id": str(id),
             "content": content,
