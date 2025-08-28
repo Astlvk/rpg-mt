@@ -78,9 +78,8 @@ class WriterAgent:
                         # yield item
                         print("function_call================================")
                         # print(item)
-                        pass
                 # 流式返回检索到的摘要
-                print(self.docs)
+                # print(self.docs)
                 yield json.dumps({"docs": self.docs}, ensure_ascii=False)
                 self.docs = []
             else:
@@ -109,7 +108,7 @@ class WriterAgent:
                 query: 查询内容，用于检索与用户对话相关的记忆（历史摘要）。
 
             Returns:
-                list[SummaryMemory]: 查询到的记忆（历史摘要）, summary为摘要内容， turn=n表示第n轮记忆。
+                list[str]: 查询到的记忆（历史摘要）JSON字符串格式, summary为摘要内容， turn=n表示第n轮记忆。
             """
             try:
                 repo = SummaryTenantRepo(self.params.tenant_name)
@@ -139,7 +138,7 @@ class WriterAgent:
                     for summary in docs
                 ]
 
-                return summaries
+                return json.dumps(summaries, ensure_ascii=False)
             except Exception as e:
                 logging.exception(e)
                 return "检索出错！"
