@@ -142,7 +142,7 @@ class WriterAgent:
                 return summaries
             except Exception as e:
                 logging.exception(e)
-                return []
+                return "检索出错！"
 
         return query_memory
 
