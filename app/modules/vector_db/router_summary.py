@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, Body, Query, HTTPException
 from .summary_repo import SummaryTenantRepo, SummaryTenantMgt
-from app.schema.vector_db import SummarySearchModeEnum
+from app.schema.summary import SummarySearchModeEnum
 
 router = APIRouter()
 

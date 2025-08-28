@@ -2,7 +2,7 @@ from typing import List
 from pydantic import BaseModel, Field
 from .message import RoleEnum, RcBaseMessage
 from .base import GptModelEnum, ZhipuAIModelEnum, DeepSeekModelEnum, QwenModelEnum
-from app.schema.vector_db import SummarySearchModeEnum
+from .summary import SummarySearchModeEnum
 
 
 class ChatParamsCommon(BaseModel):

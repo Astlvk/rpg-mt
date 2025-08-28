@@ -3,7 +3,12 @@ from weaviate.classes.tenants import Tenant
 from weaviate.classes.query import MetadataQuery
 from weaviate.classes.query import Sort
 from weaviate.collections import tenants
-from app.schema.vector_db import SummarySearchModeEnum, SummarySearchResult, TenantInfo
+from app.schema.summary import (
+    SummarySearchModeEnum,
+    SummarySearchResult,
+    TenantInfo,
+    SummaryDataModel,
+)
 from app.schema.api import ApiResponse
 from app.vector_db.weaviate_client import get_weaviate_client
 from app.ai_models.embeddings import aembed_query
@@ -59,7 +64,9 @@ class SummaryTenantRepo:
 
     def __init__(self, tenant_name: str):
         self.client = get_weaviate_client()
-        self.collection = self.client.collections.get(COLLECTION_NAME)
+        self.collection = self.client.collections.get(
+            COLLECTION_NAME, data_model_properties=SummaryDataModel
+        )
         self.tenant_coll = self.collection.with_tenant(tenant_name)
 
     async def add_summary(self, summary: str, turn: int | None = None):
@@ -201,7 +208,8 @@ class SummaryTenantRepo:
             res_data.append(
                 {
                     "uuid": str(obj.uuid),
-                    "summary": str(obj.properties["summary"]),
+                    "summary": obj.properties["summary"],
+                    "turn": obj.properties["turn"],
                     "created_at": (
                         obj.metadata.creation_time.astimezone().strftime(
                             "%Y-%m-%d %H:%M:%S"

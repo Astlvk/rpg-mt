@@ -6,6 +6,7 @@ from langchain_core.messages.ai import AIMessageChunk
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 from app.schema.chat import ChatParamsWriter, RcBaseMessage, RoleEnum
+from app.schema.summary import SummaryMemory
 from app.ai_models.chat import get_chat_model
 from app.modules.vector_db.summary_repo import SummaryTenantRepo
 
@@ -108,7 +109,7 @@ class WriterAgent:
                 query: 查询内容，用于检索与用户对话相关的记忆（历史摘要）。
 
             Returns:
-                list[str]: 查询到的记忆（历史摘要）。
+                list[SummaryMemory]: 查询到的记忆（历史摘要）, summary为摘要内容， turn=n表示第n轮记忆。
             """
             try:
                 repo = SummaryTenantRepo(self.params.tenant_name)
@@ -130,7 +131,13 @@ class WriterAgent:
                 )
 
                 # 取出摘要数据
-                summaries: list[str] = [summary["summary"] for summary in docs]
+                summaries: list[SummaryMemory] = [
+                    {
+                        "summary": summary["summary"],
+                        "turn": summary["turn"],
+                    }
+                    for summary in docs
+                ]
 
                 return summaries
             except Exception as e:

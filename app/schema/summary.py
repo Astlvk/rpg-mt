@@ -8,13 +8,25 @@ class SummarySearchModeEnum(str, Enum):
     hybrid = "hybrid"
 
 
+class SummaryDataModel(TypedDict):
+    summary: str
+    turn: int | None
+
+
 class SummarySearchResult(TypedDict):
     uuid: str
     summary: str
+    turn: int | None
     distance: float | None
     score: float | None
     created_at: str | None
     updated_at: str | None
+
+
+class SummaryMemory(TypedDict):
+    summary: str
+    turn: int | None
+
 
 class TenantInfo(TypedDict):
     name: str
