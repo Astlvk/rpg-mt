@@ -55,7 +55,7 @@ async def create_collections():
                 description="对话轮次，用于记录摘要的产生的回合，对应前端的turn",
             ),
             Property(
-                name="marged_summary",
+                name="merged_summary",
                 data_type=DataType.OBJECT_ARRAY,
                 nested_properties=[
                     Property(

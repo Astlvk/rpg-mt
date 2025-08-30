@@ -8,15 +8,27 @@ class SummarySearchModeEnum(str, Enum):
     hybrid = "hybrid"
 
 
+class MergedSummary(TypedDict):
+    summary: str
+    turn: int | None
+
+
 class SummaryDataModel(TypedDict):
     summary: str
-    turn: NotRequired[int | None]
+    turn: int | None
+    merged_summary: list[MergedSummary] | None
+
+
+class SummaryDataModelUpdate(TypedDict):
+    summary: str
+    turn: int | None
 
 
 class SummarySearchResult(TypedDict):
     uuid: str
     summary: str
     turn: int | None
+    merged_summary: list[MergedSummary] | None
     distance: float | None
     score: float | None
     created_at: str | None

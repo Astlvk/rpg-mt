@@ -1,19 +1,61 @@
-from weaviate.classes.config import Property, DataType
+from uuid import UUID
+from weaviate.classes.config import DataType, Property
 from weaviate.classes.tenants import Tenant
-from weaviate.classes.query import MetadataQuery
-from weaviate.classes.query import Sort
-from weaviate.collections import tenants
+from weaviate.classes.query import MetadataQuery, Sort, Filter, QueryNested
+from weaviate.collections.classes.grpc import PROPERTIES
 from app.schema.summary import (
     SummarySearchModeEnum,
     SummarySearchResult,
     TenantInfo,
     SummaryDataModel,
+    MergedSummary,
+    SummaryDataModelUpdate,
 )
 from app.schema.api import ApiResponse
 from app.vector_db.weaviate_client import get_weaviate_client
 from app.ai_models.embeddings import aembed_query
 
 COLLECTION_NAME = "Summary"
+
+
+class SummaryCollection:
+    def __init__(self):
+        self.client = get_weaviate_client()
+        self.collection = self.client.collections.get(COLLECTION_NAME)
+
+    async def update_collection(self):
+        """
+        更新集合定义，根据需要自行编码调用。
+        """
+        await self.collection.config.update(
+            property_descriptions={
+                "marged_summary": "废弃的！！！由于拼写错误，废弃的属性。",
+            }
+        )
+
+    async def add_new_property(self):
+        """
+        添加新的属性，后续有新增属性时，咨询修改该方法并调用
+        """
+        await self.collection.config.add_property(
+            Property(
+                name="merged_summary",
+                data_type=DataType.OBJECT_ARRAY,
+                nested_properties=[
+                    Property(
+                        name="summary",
+                        data_type=DataType.TEXT,
+                        description="被合并的相似摘要内容",
+                    ),
+                    Property(
+                        name="turn",
+                        data_type=DataType.INT,
+                        description="被合并的相似摘要的回合数",
+                    ),
+                ],
+                description="记录摘要更新时被合并的相似摘要数据",
+            ),
+        )
 
 
 class SummaryTenantMgt:
@@ -67,9 +109,23 @@ class SummaryTenantRepo:
         self.collection = self.client.collections.get(
             COLLECTION_NAME, data_model_properties=SummaryDataModel
         )
+        self.collection_update = self.client.collections.get(
+            COLLECTION_NAME, data_model_properties=SummaryDataModelUpdate
+        )
         self.tenant_coll = self.collection.with_tenant(tenant_name)
+        self.tenant_coll_update = self.collection_update.with_tenant(tenant_name)
+        self.return_properties: PROPERTIES = [
+            "summary",
+            "turn",
+            QueryNested(name="merged_summary", properties=["summary", "turn"]),
+        ]
 
-    async def add_summary(self, summary: str, turn: int | None = None):
+    async def add_summary(
+        self,
+        summary: str,
+        turn: int | None = None,
+        merged_summary: list[MergedSummary] | None = None,
+    ):
         """
         添加摘要，向量化，返回插入的id
         """
@@ -78,6 +134,7 @@ class SummaryTenantRepo:
             properties={
                 "summary": summary,
                 "turn": turn,
+                "merged_summary": merged_summary,
             },
             vector={
                 "vector": summary_embed,
@@ -88,10 +145,15 @@ class SummaryTenantRepo:
         """根据id获取摘要对象"""
         return await self.tenant_coll.query.fetch_object_by_id(id)
 
-    async def update_summary(self, uuid: str, summary: str, turn: int | None = None):
+    async def update_summary(
+        self,
+        uuid: str,
+        summary: str,
+        turn: int | None = None,
+    ):
         # 更新摘要
         summary_embed = await aembed_query(summary)
-        return await self.tenant_coll.data.update(
+        return await self.tenant_coll_update.data.update(
             uuid=uuid,
             properties={
                 "summary": summary,
@@ -104,6 +166,14 @@ class SummaryTenantRepo:
 
     async def delete_summary(self, id: str):
         return await self.tenant_coll.data.delete_by_id(id)
+
+    async def delete_summary_by_uuids(self, uuids: list[str] | list[UUID]):
+        """
+        根据uuids删除摘要
+        """
+        return await self.tenant_coll.data.delete_many(
+            where=Filter.by_id().contains_any(uuids)
+        )
 
     async def get_summary_by_id(self, id: str):
         """
@@ -132,6 +202,7 @@ class SummaryTenantRepo:
             limit=size,
             offset=(page - 1) * size,
             return_metadata=MetadataQuery.full(),
+            return_properties=self.return_properties,
         )
 
         res_data = []
@@ -141,6 +212,7 @@ class SummaryTenantRepo:
                     "uuid": str(obj.uuid),
                     "summary": str(obj.properties["summary"]),
                     "turn": obj.properties.get("turn", None),
+                    "merged_summary": obj.properties.get("merged_summary", None),
                     "created_at": (
                         obj.metadata.creation_time.astimezone().strftime(
                             "%Y-%m-%d %H:%M:%S"
@@ -169,6 +241,7 @@ class SummaryTenantRepo:
             limit=limit,
             after=cursor,
             return_metadata=MetadataQuery.full(),
+            return_properties=self.return_properties,
         )
 
         res_data = []
@@ -178,6 +251,7 @@ class SummaryTenantRepo:
                     "uuid": str(obj.uuid),
                     "summary": str(obj.properties["summary"]),
                     "turn": obj.properties.get("turn", None),
+                    "merged_summary": obj.properties.get("merged_summary", None),
                     "created_at": (
                         obj.metadata.creation_time.astimezone().strftime(
                             "%Y-%m-%d %H:%M:%S"
@@ -222,6 +296,7 @@ class SummaryTenantRepo:
                     "uuid": str(obj.uuid),
                     "summary": obj.properties["summary"],
                     "turn": obj.properties.get("turn", None),
+                    "merged_summary": obj.properties.get("merged_summary", None),
                     "created_at": (
                         obj.metadata.creation_time.astimezone().strftime(
                             "%Y-%m-%d %H:%M:%S"
@@ -252,6 +327,7 @@ class SummaryTenantRepo:
             query_properties=["summary"],
             limit=top_k,
             return_metadata=MetadataQuery.full(),
+            return_properties=self.return_properties,
         )
 
     async def similarity_search(
@@ -267,6 +343,7 @@ class SummaryTenantRepo:
             distance=distance,
             target_vector="vector",
             return_metadata=MetadataQuery.full(),
+            return_properties=self.return_properties,
         )
 
     async def hybrid_search(self, query: str, distance: float = 0.5, top_k: int = 10):
@@ -282,4 +359,5 @@ class SummaryTenantRepo:
             max_vector_distance=distance,
             limit=top_k,
             return_metadata=MetadataQuery.full(),
+            return_properties=self.return_properties,
         )

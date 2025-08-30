@@ -103,6 +103,14 @@ class ChatParamsWriter(ChatParamsCommon):
 class ChatParamsSummary(ChatParamsCommon):
     """摘要接口的参数模型，继承自ChatParamsCommon"""
 
+    summary_system_prompt: str | None = Field(
+        default=None,
+        description="摘要用系统提示词，用于指导模型生成摘要",
+        examples=[
+            "你是一个资深的游戏叙事设计师，擅长提炼故事核心要素。你的任务是将一段游戏对话历史，浓缩成一份结构化的记忆摘要。"
+        ],
+    )
+
     summary_prompt: str = Field(
         ...,
         description="摘要提示词，用于指导模型生成摘要",
@@ -121,26 +129,34 @@ class ChatParamsSummary(ChatParamsCommon):
         examples=[None, 0],
     )
 
-    enable_update: bool = Field(
+    update_summary: bool = Field(
         default=False,
         description="是否启用更新摘要",
         examples=[False],
     )
 
-    distance: float = Field(
+    summmary_distance: float = Field(
         default=0.3,
         description="更新摘要时用于搜索的相似性距离",
         examples=[0.3],
     )
 
-    top_k: int = Field(
-        default=10,
+    summary_top_k: int = Field(
+        default=5,
         description="更新摘要时用于搜索的摘要数量",
-        examples=[10],
+        examples=[5],
     )
 
-    merge_prompt: str = Field(
+    summary_merge_system_prompt: str | None = Field(
+        default="",
+        description="合并用系统提示词，用于指导模型合并摘要",
+        examples=[
+            "你是一个专业的剧情档案管理员，负责将关于同一故事的多份摘要报告合并成一份唯一、最新、简洁且结构化的总摘要。"
+        ],
+    )
+
+    summary_merge_prompt: str = Field(
         default="",
         description="合并提示词，用于指导模型合并摘要",
-        examples=["请根据以下摘要，合并成新的摘要"],
+        examples=["请根据{summarys}历史摘要与{new_summary}新摘要，合并成新的摘要"],
     )
