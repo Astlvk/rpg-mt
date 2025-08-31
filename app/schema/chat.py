@@ -135,10 +135,10 @@ class ChatParamsSummary(ChatParamsCommon):
         examples=[False],
     )
 
-    summmary_distance: float = Field(
-        default=0.3,
+    summary_distance: float = Field(
+        default=0.2,
         description="更新摘要时用于搜索的相似性距离",
-        examples=[0.3],
+        examples=[0.2],
     )
 
     summary_top_k: int = Field(

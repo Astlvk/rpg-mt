@@ -164,19 +164,19 @@ async def get_summaries_by_cursor(
         raise HTTPException(status_code=500, detail=f"获取摘要失败: {str(e)}")
 
 
-@router.get(
+@router.post(
     "/summary/{tenant_name}/search",
     summary="摘要搜索，支持关键字搜索、相似性搜索、混合搜索",
 )
 async def summary_search(
     tenant_name: str,
-    query: str = Query(..., embed=True, description="查询内容"),
-    mode: SummarySearchModeEnum = Query(
+    query: str = Body(..., description="查询内容"),
+    mode: SummarySearchModeEnum = Body(
         SummarySearchModeEnum.similarity,
         description="搜索模式 keyword/similarity/hybrid",
     ),
-    distance: float = Query(0.5, description="相似度距离"),
-    top_k: int = Query(10, description="返回数量"),
+    distance: float = Body(0.5, description="相似度距离"),
+    top_k: int = Body(10, description="返回数量"),
 ):
     """
     摘要搜索

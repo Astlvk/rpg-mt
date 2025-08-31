@@ -9,6 +9,7 @@ from app.schema.chat import ChatParamsWriter, RcBaseMessage, RoleEnum
 from app.schema.summary import SummaryMemory
 from app.ai_models.chat import get_chat_model
 from app.modules.vector_db.summary_repo import SummaryTenantRepo
+from .tools import deep_think
 
 
 class WriterAgent:
@@ -28,7 +29,11 @@ class WriterAgent:
             },
         )
         # 如果启用记忆检索，则添加记忆检索工具
-        tools = [self.query_memory_wrap()] if self.params.enable_retriever else []
+        tools = (
+            [deep_think] + [self.query_memory_wrap()]
+            if self.params.enable_retriever
+            else []
+        )
         self.agent = create_react_agent(
             model=self.model,
             tools=tools,
@@ -125,6 +130,7 @@ class WriterAgent:
             Returns:
                 list[str]: 查询到的记忆（历史摘要）JSON字符串格式, summary为摘要内容， turn=n表示第n轮记忆。
             """
+            print(f"查询记忆: {query}")
             try:
                 repo = SummaryTenantRepo(self.params.tenant_name)
                 res = await repo.summary_search(

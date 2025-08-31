@@ -43,10 +43,11 @@ async def _update_summary(params: ChatParamsSummary, new_summary: str):
     merged_summary: list[MergedSummary] | None = None
 
     if params.update_summary:
+        print("搜索相似摘要====================", params.summary_distance)
         # 搜索相似摘要
         res = await repo.similarity_search(
             cur_summary,
-            distance=params.summmary_distance,
+            distance=params.summary_distance,
             top_k=params.summary_top_k,
         )
 
