@@ -14,12 +14,14 @@ class MergedSummary(TypedDict):
 
 
 class SummaryDataModel(TypedDict):
+    session_id: NotRequired[str]
     summary: str
     turn: int | None
     merged_summary: list[MergedSummary] | None
 
 
 class SummaryDataModelUpdate(TypedDict):
+    session_id: NotRequired[str]
     summary: str
     turn: int | None
 

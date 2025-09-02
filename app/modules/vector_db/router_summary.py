@@ -157,7 +157,7 @@ async def get_summaries_by_cursor(
     """
     try:
         repo = SummaryTenantRepo(tenant_name)
-        res = await repo.get_summary_by_cursor(cursor=cursor, limit=limit)
+        res = await repo.get_summaries_by_cursor(cursor=cursor, limit=limit)
         return res
     except Exception as e:
         logging.exception(e)

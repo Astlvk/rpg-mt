@@ -106,10 +106,10 @@ class SummaryTenantRepo:
 
     def __init__(self, tenant_name: str):
         self.client = get_weaviate_client()
-        self.collection = self.client.collections.get(
+        self.collection = self.client.collections.use(
             COLLECTION_NAME, data_model_properties=SummaryDataModel
         )
-        self.collection_update = self.client.collections.get(
+        self.collection_update = self.client.collections.use(
             COLLECTION_NAME, data_model_properties=SummaryDataModelUpdate
         )
         self.tenant_coll = self.collection.with_tenant(tenant_name)
@@ -140,10 +140,6 @@ class SummaryTenantRepo:
                 "vector": summary_embed,
             },
         )
-
-    async def get_summary(self, id: str):
-        """根据id获取摘要对象"""
-        return await self.tenant_coll.query.fetch_object_by_id(id)
 
     async def update_summary(
         self,
@@ -232,7 +228,9 @@ class SummaryTenantRepo:
 
         return {"total": total, "data": res_data}
 
-    async def get_summary_by_cursor(self, cursor: str | None = None, limit: int = 100):
+    async def get_summaries_by_cursor(
+        self, cursor: str | None = None, limit: int = 100
+    ):
         """
         基于游标的分页查询，cursor为游标，limit为返回数量
         """
@@ -361,3 +359,184 @@ class SummaryTenantRepo:
             return_metadata=MetadataQuery.full(),
             return_properties=self.return_properties,
         )
+
+
+class SummarySessionRepo:
+    """
+    摘要管理类，基于集合中session_id管理摘要的添加、获取、更新、删除等操作
+    """
+
+    def __init__(self, session_id: str):
+        self.session_id = session_id
+        self.client = get_weaviate_client()
+        self.collection = self.client.collections.use(
+            COLLECTION_NAME, data_model_properties=SummaryDataModel
+        )
+        self.collection_update = self.client.collections.use(
+            COLLECTION_NAME, data_model_properties=SummaryDataModelUpdate
+        )
+        self.filter_session_id = Filter.by_property("session_id").equal(self.session_id)
+        self.return_properties: PROPERTIES = [
+            "summary",
+            "turn",
+            QueryNested(name="merged_summary", properties=["summary", "turn"]),
+        ]
+
+    async def add_summary(
+        self,
+        summary: str,
+        turn: int | None = None,
+        merged_summary: list[MergedSummary] | None = None,
+    ):
+        """
+        添加摘要，向量化，返回插入的id
+        """
+        summary_embed = await aembed_query(summary)
+        return await self.collection.data.insert(
+            properties={
+                "session_id": self.session_id,
+                "summary": summary,
+                "turn": turn,
+                "merged_summary": merged_summary,
+            },
+            vector={
+                "vector": summary_embed,
+            },
+        )
+
+    async def update_summary(
+        self,
+        uuid: str,
+        summary: str,
+        turn: int | None = None,
+    ):
+        """更新摘要"""
+        summary_embed = await aembed_query(summary)
+        return await self.collection_update.data.update(
+            uuid=uuid,
+            properties={
+                "summary": summary,
+                "turn": turn,
+            },
+            vector={
+                "vector": summary_embed,
+            },
+        )
+
+    async def delete_summary(self, id: str):
+        return await self.collection.data.delete_by_id(id)
+
+    async def delete_summary_by_uuids(self, uuids: list[str] | list[UUID]):
+        """
+        根据uuids删除摘要（该session_id下）
+        """
+        return await self.collection.data.delete_many(
+            where=self.filter_session_id & Filter.by_id().contains_any(uuids)
+        )
+
+    async def delete_summary_by_session_id(self):
+        """
+        根据session_id删除摘要（删除该session_id下所有摘要）
+        """
+        return await self.collection.data.delete_many(where=self.filter_session_id)
+
+    async def get_summary_by_id(self, id: str):
+        """
+        根据id获取摘要对象
+        """
+        return await self.collection.query.fetch_object_by_id(id)
+
+    async def get_summaries(self, limit: int = 10):
+        """
+        获取所有摘要，limit为返回数量
+        """
+        return await self.collection.query.fetch_objects(
+            filters=self.filter_session_id,
+            sort=Sort.by_update_time(ascending=False),
+            limit=limit,
+            return_metadata=MetadataQuery.full(),
+        )
+
+    async def get_summaries_offset(self, size: int = 10, page: int = 1):
+        """
+        获取所有摘要，offset分页形式，size为每页数量，page为页码
+        """
+        assert page >= 1 and size >= 1
+        total = await self.collection.aggregate.over_all(filters=self.filter_session_id)
+        res = await self.collection.query.fetch_objects(
+            filters=self.filter_session_id,
+            sort=Sort.by_update_time(ascending=False),
+            limit=size,
+            offset=(page - 1) * size,
+            return_metadata=MetadataQuery.full(),
+            return_properties=self.return_properties,
+        )
+
+        res_data = []
+        for obj in res.objects:
+            res_data.append(
+                {
+                    "uuid": str(obj.uuid),
+                    "summary": str(obj.properties["summary"]),
+                    "turn": obj.properties.get("turn", None),
+                    "merged_summary": obj.properties.get("merged_summary", None),
+                    "created_at": (
+                        obj.metadata.creation_time.astimezone().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if obj.metadata.creation_time
+                        else None
+                    ),
+                    "updated_at": (
+                        obj.metadata.last_update_time.astimezone().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if obj.metadata.last_update_time
+                        else None
+                    ),
+                }
+            )
+
+        return {"total": total.total_count or 0, "data": res_data}
+
+    async def get_summaries_by_cursor(
+        self, cursor: str | None = None, limit: int = 100
+    ):
+        """
+        基于游标的分页查询，cursor为游标，limit为返回数量
+        """
+        total = await self.collection.aggregate.over_all(filters=self.filter_session_id)
+        res = await self.collection.query.fetch_objects(
+            filters=self.filter_session_id,
+            limit=limit,
+            after=cursor,
+            return_metadata=MetadataQuery.full(),
+            return_properties=self.return_properties,
+        )
+
+        res_data = []
+        for obj in res.objects:
+            res_data.append(
+                {
+                    "uuid": str(obj.uuid),
+                    "summary": str(obj.properties["summary"]),
+                    "turn": obj.properties.get("turn", None),
+                    "merged_summary": obj.properties.get("merged_summary", None),
+                    "created_at": (
+                        obj.metadata.creation_time.astimezone().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if obj.metadata.creation_time
+                        else None
+                    ),
+                    "updated_at": (
+                        obj.metadata.last_update_time.astimezone().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if obj.metadata.last_update_time
+                        else None
+                    ),
+                }
+            )
+
+        return {"total": total, "data": res_data}
