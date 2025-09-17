@@ -1,18 +1,31 @@
 from typing import List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from .message import RoleEnum, RcBaseMessage
-from .base import GptModelEnum, ZhipuAIModelEnum, DeepSeekModelEnum, QwenModelEnum
+from .models_enum import (
+    GptModelEnum,
+    ZhipuAIModelEnum,
+    DeepSeekModelEnum,
+    QwenModelEnum,
+    GeminiModelEnum,
+)
 from .summary import SummarySearchModeEnum
 
 
 class ChatParamsCommon(BaseModel):
     """通用的chat model参数模型，用于支持多个平台模型入参"""
 
-    model: GptModelEnum | ZhipuAIModelEnum | DeepSeekModelEnum | QwenModelEnum = Field(
+    model: (
+        GptModelEnum
+        | ZhipuAIModelEnum
+        | DeepSeekModelEnum
+        | QwenModelEnum
+        | GeminiModelEnum
+    ) = Field(
         default=ZhipuAIModelEnum.glm45flash,
         description="模型名称，目前支持openai与智谱AI提供的模型",
         examples=[ZhipuAIModelEnum.glm45flash],
     )
+
     api_key: str = Field(
         default="",
         description="API密钥，用于调用模型",

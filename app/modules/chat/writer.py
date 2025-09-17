@@ -22,11 +22,11 @@ class WriterAgent:
             base_url=params.base_url,
             temperature=params.temperature,
             max_tokens=params.max_tokens,
-            extra_body={
-                "thinking": {
-                    "type": "enabled",
-                },
-            },
+            # extra_body={
+            #     "thinking": {
+            #         "type": "enabled",
+            #     },
+            # },
         )
         # 如果启用记忆检索，则添加记忆检索工具
         tools = (
