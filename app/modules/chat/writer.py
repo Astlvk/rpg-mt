@@ -98,7 +98,7 @@ class WriterAgent:
                     else:
                         # yield item
                         print("function_call================================")
-                        # print(item)
+                        print(item)
                 # 流式返回检索到的摘要
                 yield json.dumps({"docs": self.docs}, ensure_ascii=False)
                 self.docs = []
