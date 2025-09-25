@@ -107,7 +107,14 @@ class WriterAgent:
                     {"messages": input_data},
                     stream_mode="messages",
                 )
-                yield json.dumps({"content": content}, ensure_ascii=False)
+                # print(content)
+                content = cast(list[AIMessageChunk], content)
+                ai_text = "".join(
+                    str(item.content)
+                    for item in content
+                    if isinstance(item, AIMessageChunk)
+                )
+                yield json.dumps({"content": ai_text}, ensure_ascii=False)
         except Exception as e:
             logging.exception(e)
             msg = repr(e)
