@@ -127,46 +127,61 @@ class WriterAgent:
         desc = self.params.query_tool_prompt or None
 
         @tool(parse_docstring=True, description=desc)
-        async def query_memory(query: str):
+        async def query_memory(querys: list[str]):
             """
             查询历史记忆，使用相似性搜索检索与用户对话相关的记忆（历史摘要）。
 
             Args:
-                query: 查询内容，用于检索与用户对话相关的记忆（历史摘要）。
+                querys: 查询内容，用于检索与用户对话相关的记忆（历史摘要），可以传入多个查询内容。
 
             Returns:
                 list[str]: 查询到的记忆（历史摘要）JSON字符串格式, summary为摘要内容， turn=n表示第n轮记忆。
             """
-            print(f"查询记忆: {query}")
+            print(f"查询记忆: {querys}")
             try:
                 repo = SummaryTenantRepo(self.params.tenant_name)
-                res = await repo.summary_search(
-                    query=query,
-                    mode=self.params.retriever_mode,
-                    distance=self.params.distance,
-                    top_k=self.params.top_k,
-                )
+                res_summaries: list[SummaryMemory] = []
 
-                docs = res["data"]
+                for query in querys:
+                    res = await repo.summary_search(
+                        query=query,
+                        mode=self.params.retriever_mode,
+                        distance=self.params.distance,
+                        top_k=self.params.top_k,
+                    )
 
-                # 保存检索到的摘要，用于流式返回
-                self.docs.append(
-                    {
-                        "query": query,
-                        "summaries": docs,
-                    }
-                )
+                    docs = res["data"]
 
-                # 取出摘要数据
-                summaries: list[SummaryMemory] = [
-                    {
-                        "summary": summary["summary"],
-                        "turn": summary["turn"],
-                    }
-                    for summary in docs
-                ]
+                    # 保存检索到的摘要，用于流式返回
+                    self.docs.append(
+                        {
+                            "query": query,
+                            "summaries": docs,
+                        }
+                    )
 
-                return json.dumps(summaries, ensure_ascii=False)
+                    # 取出摘要数据
+                    summaries: list[SummaryMemory] = [
+                        {
+                            "summary": summary["summary"],
+                            "turn": summary["turn"],
+                        }
+                        for summary in docs
+                    ]
+
+                    res_summaries.extend(summaries)
+
+                # 去重：只保留summary和turn都相同的唯一项
+                unique = {}
+                for s in res_summaries:
+                    key = (s["summary"], s["turn"])
+                    if key not in unique:
+                        unique[key] = s
+                res_summaries = list(unique.values())
+
+                print(f"查询到的记忆: {[s['turn'] for s in res_summaries]}")
+
+                return json.dumps(res_summaries, ensure_ascii=False)
             except Exception as e:
                 logging.exception(e)
                 return "检索出错！"
