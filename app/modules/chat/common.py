@@ -1,6 +1,6 @@
 import json
 import logging
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
+from langchain.messages import HumanMessage, SystemMessage, AIMessage
 from app.schema.chat import ChatParamsCommon, RcBaseMessage, RoleEnum
 from app.ai_models.chat import get_chat_model
 
@@ -23,8 +23,7 @@ async def chat(params: ChatParamsCommon):
         msg for msg in params.messages if msg.role != RoleEnum.system
     ]
 
-    # 需要把messages转换为BaseMessage
-    input_data: list[BaseMessage] = [
+    input_data = [
         (
             SystemMessage(content=message.content)
             if message.role == RoleEnum.system
@@ -70,8 +69,7 @@ async def chat_base(params: ChatParamsCommon):
         msg for msg in params.messages if msg.role != RoleEnum.system
     ]
 
-    # 需要把messages转换为BaseMessage
-    input_data: list[BaseMessage] = [
+    input_data = [
         (
             SystemMessage(content=message.content)
             if message.role == RoleEnum.system

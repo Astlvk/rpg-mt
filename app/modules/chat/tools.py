@@ -1,4 +1,4 @@
-from langchain_core.tools import tool
+from langchain.tools import tool
 
 
 @tool(parse_docstring=True)
@@ -17,4 +17,4 @@ def deep_think(content: str) -> str:
 
 
 if __name__ == "__main__":
-    print(deep_think("1+1=2"))
+    print(deep_think.invoke("1+1=2"))

@@ -1,10 +1,9 @@
 import json
 import logging
 from typing import cast
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
-from langchain_core.messages.ai import AIMessageChunk
-from langchain_core.tools import tool
-from langgraph.prebuilt import create_react_agent
+from langchain.messages import HumanMessage, SystemMessage, AIMessage, AIMessageChunk
+from langchain.tools import tool
+from langchain.agents import create_agent
 from app.schema.chat import ChatParamsWriter, RcBaseMessage, RoleEnum
 from app.schema.summary import SummaryMemory
 from app.ai_models.chat import get_chat_model
@@ -34,18 +33,16 @@ class WriterAgent:
             if self.params.enable_retriever
             else []
         )
-        self.agent = create_react_agent(
+        self.agent = create_agent(
             model=self.model,
             tools=tools,
-            prompt=self.params.sys_prompt,
+            system_prompt=self.params.sys_prompt,
             debug=False,
         )
 
     async def run(self):
         # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
-        messages = [
-            # RcBaseMessage(role=RoleEnum.system, content=self.params.sys_prompt)
-        ] + [msg for msg in self.params.messages if msg.role != RoleEnum.system]
+        messages = [msg for msg in self.params.messages if msg.role != RoleEnum.system]
 
         # 如果存在instruction_prompt，则添加到messages中
         if self.params.instruction_prompt:
@@ -56,14 +53,19 @@ class WriterAgent:
             )
 
         # 需要把messages转换为BaseMessage
-        input_data: list[BaseMessage] = [
+        input_data = [
             (
-                SystemMessage(content=message.content)
+                # SystemMessage(content=message.content)
+                {"role": "system", "content": message.content}
                 if message.role == RoleEnum.system
                 else (
-                    AIMessage(content=message.content)
+                    # AIMessage(content=message.content)
+                    {"role": "assistant", "content": message.content}
                     if message.role == RoleEnum.assistant
-                    else HumanMessage(content=message.content)
+                    else (
+                        # HumanMessage(content=message.content)
+                        {"role": "user", "content": message.content}
+                    )
                 )
             )
             for message in messages
@@ -72,7 +74,7 @@ class WriterAgent:
         try:
             if self.params.streaming:
                 aiter = self.agent.astream(
-                    {"messages": input_data},
+                    {"messages": [*input_data]},
                     stream_mode="messages",
                 )
                 async for item, metadata in aiter:
@@ -104,7 +106,7 @@ class WriterAgent:
                 self.docs = []
             else:
                 content = await self.agent.ainvoke(
-                    {"messages": input_data},
+                    {"messages": [*input_data]},
                     stream_mode="messages",
                 )
                 # print(content)
@@ -209,7 +211,7 @@ async def chat_writer(params: ChatParamsWriter):
     ]
 
     # 需要把messages转换为BaseMessage
-    input_data: list[BaseMessage] = [
+    input_data = [
         (
             SystemMessage(content=message.content)
             if message.role == RoleEnum.system

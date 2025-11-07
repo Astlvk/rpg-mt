@@ -94,7 +94,7 @@ async def _update_summary(params: ChatParamsSummary, new_summary: str):
             cur_summary = await chat_base(params)
 
     id = await repo.add_summary(
-        cur_summary, turn=params.turn, merged_summary=merged_summary
+        str(cur_summary), turn=params.turn, merged_summary=merged_summary
     )
 
     # 删除合并的摘要
