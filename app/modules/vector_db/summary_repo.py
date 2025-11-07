@@ -1,3 +1,4 @@
+from warnings import deprecated
 from uuid import UUID
 from weaviate.classes.config import DataType, Property
 from weaviate.classes.tenants import Tenant
@@ -185,6 +186,7 @@ class SummaryTenantRepo:
             sort=Sort.by_update_time(ascending=False),
             limit=limit,
             return_metadata=MetadataQuery.full(),
+            # return_properties=self.return_properties,
         )
 
     async def get_summaries_offset(self, size: int = 10, page: int = 1):
@@ -361,6 +363,9 @@ class SummaryTenantRepo:
         )
 
 
+@deprecated(
+    "综合考察后，比起多集合、filter过滤，weaviate本身还是建议使用租户来隔离数据。"
+)
 class SummarySessionRepo:
     """
     摘要管理类，基于集合中session_id管理摘要的添加、获取、更新、删除等操作
