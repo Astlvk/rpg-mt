@@ -48,7 +48,9 @@ class WriterAgent:
         if self.params.instruction_prompt:
             messages.append(
                 RcBaseMessage(
-                    role=RoleEnum.user, content=self.params.instruction_prompt
+                    role=RoleEnum.user,
+                    content=self.params.instruction_prompt,
+                    turn=None,
                 )
             )
 
@@ -60,11 +62,17 @@ class WriterAgent:
                 if message.role == RoleEnum.system
                 else (
                     # AIMessage(content=message.content)
-                    {"role": "assistant", "content": message.content}
+                    {
+                        "role": "assistant",
+                        "content": message.content + f"\n[turn: {message.turn}]",
+                    }
                     if message.role == RoleEnum.assistant
                     else (
                         # HumanMessage(content=message.content)
-                        {"role": "user", "content": message.content}
+                        {
+                            "role": "user",
+                            "content": message.content + f"\n[turn: {message.turn}]",
+                        }
                     )
                 )
             )
@@ -206,9 +214,9 @@ async def chat_writer(params: ChatParamsWriter):
     )
 
     # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
-    messages = [RcBaseMessage(role=RoleEnum.system, content=params.sys_prompt)] + [
-        msg for msg in params.messages if msg.role != RoleEnum.system
-    ]
+    messages = [
+        RcBaseMessage(role=RoleEnum.system, content=params.sys_prompt, turn=None)
+    ] + [msg for msg in params.messages if msg.role != RoleEnum.system]
 
     # 需要把messages转换为BaseMessage
     input_data = [

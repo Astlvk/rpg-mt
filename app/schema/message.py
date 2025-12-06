@@ -24,3 +24,6 @@ class RcBaseMessage(BaseModel):
 
     role: RoleEnum = Field(..., description="角色")
     content: str = Field(..., description="消息内容")
+    turn: int | None = Field(
+        None, description="可选的，对话轮次，用于记录消息的产生回合，对应前端的turn"
+    )
