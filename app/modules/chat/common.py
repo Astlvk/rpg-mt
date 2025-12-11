@@ -19,9 +19,9 @@ async def chat(params: ChatParamsCommon):
     )
 
     # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
-    messages = [RcBaseMessage(role=RoleEnum.system, content=params.sys_prompt)] + [
-        msg for msg in params.messages if msg.role != RoleEnum.system
-    ]
+    messages = [
+        RcBaseMessage(role=RoleEnum.system, content=params.sys_prompt, turn=None)
+    ] + [msg for msg in params.messages if msg.role != RoleEnum.system]
 
     input_data = [
         (
@@ -65,9 +65,9 @@ async def chat_base(params: ChatParamsCommon):
     )
 
     # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
-    messages = [RcBaseMessage(role=RoleEnum.system, content=params.sys_prompt)] + [
-        msg for msg in params.messages if msg.role != RoleEnum.system
-    ]
+    messages = [
+        RcBaseMessage(role=RoleEnum.system, content=params.sys_prompt, turn=None)
+    ] + [msg for msg in params.messages if msg.role != RoleEnum.system]
 
     input_data = [
         (

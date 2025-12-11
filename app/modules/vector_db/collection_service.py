@@ -71,6 +71,11 @@ async def create_collections():
                 ],
                 description="记录摘要更新时被合并的相似摘要数据",
             ),
+            Property(
+                name="type",
+                data_type=DataType.TEXT,
+                description="摘要类型，可以用来划分如：摘要、对话、剧情、角色等",
+            ),
         ],
         vector_config=[
             Configure.Vectors.self_provided(name="vector"),

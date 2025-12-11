@@ -14,7 +14,6 @@ class MergedSummary(TypedDict):
 
 
 class SummaryDataModel(TypedDict):
-    session_id: NotRequired[str]
     summary: str
     turn: int | None
     merged_summary: list[MergedSummary] | None
@@ -30,6 +29,7 @@ class SummarySearchResult(TypedDict):
     uuid: str
     summary: str
     turn: int | None
+    type: str | None
     merged_summary: list[MergedSummary] | None
     distance: float | None
     score: float | None
