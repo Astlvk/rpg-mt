@@ -10,6 +10,7 @@ from app.modules.common import router as router_common
 from app.modules.chat import router as router_chat
 from app.modules.vector_db import router as router_vector_db, router_summary
 from app.modules.embedding import router as router_embedding
+# from app.modules.vector_db.summary_repo import SummaryCollection
 
 
 @asynccontextmanager
@@ -18,6 +19,7 @@ async def lifespan(app: FastAPI):
     # 这里初始化数据库
     await weaviate_client.init_weaviate_client()
     await create_collections()
+    # await SummaryCollection().add_new_property()
     print("app init")
     yield
     # 这可以做清理工作

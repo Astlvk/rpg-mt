@@ -40,21 +40,9 @@ class SummaryCollection:
         """
         await self.collection.config.add_property(
             Property(
-                name="merged_summary",
-                data_type=DataType.OBJECT_ARRAY,
-                nested_properties=[
-                    Property(
-                        name="summary",
-                        data_type=DataType.TEXT,
-                        description="被合并的相似摘要内容",
-                    ),
-                    Property(
-                        name="turn",
-                        data_type=DataType.INT,
-                        description="被合并的相似摘要的回合数",
-                    ),
-                ],
-                description="记录摘要更新时被合并的相似摘要数据",
+                name="type",
+                data_type=DataType.TEXT,
+                description="摘要类型，可以用来划分如：摘要、对话、剧情、角色等",
             ),
         )
 
