@@ -12,13 +12,19 @@ async def chat_summarize(params: ChatParamsSummary):
     摘要函数，用于总结对话内容，并向量化到向量库中
     """
     messages = params.messages + [
-        RcBaseMessage(role=RoleEnum.user, content=params.summary_prompt),
+        RcBaseMessage(
+            role=RoleEnum.user, content=params.summary_prompt, turn=params.turn
+        ),
     ]
 
     # 如果存在系统提示词则拼接到消息列表中
     if params.summary_system_prompt:
         messages = [
-            RcBaseMessage(role=RoleEnum.system, content=params.summary_system_prompt)
+            RcBaseMessage(
+                role=RoleEnum.system,
+                content=params.summary_system_prompt,
+                turn=None,
+            )
         ] + messages
 
     params.messages = messages
@@ -83,12 +89,18 @@ async def _update_summary(params: ChatParamsSummary, new_summary: str):
                 }
             ]
             params.messages = [
-                RcBaseMessage(role=RoleEnum.user, content=msg.to_string()),
+                RcBaseMessage(
+                    role=RoleEnum.user,
+                    content=msg.to_string(),
+                    turn=params.turn,
+                ),
             ]
             if params.summary_merge_system_prompt:
                 params.messages = [
                     RcBaseMessage(
-                        role=RoleEnum.system, content=params.summary_merge_system_prompt
+                        role=RoleEnum.system,
+                        content=params.summary_merge_system_prompt,
+                        turn=None,
                     ),
                 ] + params.messages
             cur_summary = await chat_base(params)
