@@ -8,6 +8,12 @@ class SummarySearchModeEnum(str, Enum):
     hybrid = "hybrid"
 
 
+class SummaryTypeEnum(str, Enum):
+    character = "character"
+    summary = "summary"
+    other = "other"
+
+
 class MergedSummary(TypedDict):
     summary: str
     turn: int | None
@@ -16,13 +22,14 @@ class MergedSummary(TypedDict):
 class SummaryDataModel(TypedDict):
     summary: str
     turn: int | None
+    type: SummaryTypeEnum | None
     merged_summary: list[MergedSummary] | None
 
 
 class SummaryDataModelUpdate(TypedDict):
-    session_id: NotRequired[str]
     summary: str
     turn: int | None
+    type: SummaryTypeEnum | None
 
 
 class SummarySearchResult(TypedDict):

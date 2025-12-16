@@ -100,11 +100,11 @@ class ChatParamsWriter(ChatParamsCommon):
         examples=["请根据对话内容剧情，生成下一段剧情"],
     )
 
-    summary_prompt: str = Field(
-        default="",
-        description="摘要提示词，用于指导模型生成摘要",
-        examples=["请根据以下剧情，生成一个摘要"],
-    )
+    # summary_prompt: str = Field(
+    #     default="",
+    #     description="摘要提示词，用于指导模型生成摘要",
+    #     examples=["请根据以下剧情，生成一个摘要"],
+    # )
 
     query_tool_prompt: str | None = Field(
         default=None,

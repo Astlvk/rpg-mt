@@ -13,6 +13,7 @@ from app.schema.summary import (
     SummaryDataModelUpdate,
 )
 from app.schema.api import ApiResponse
+from app.schema.summary import SummaryTypeEnum
 from app.vector_db.weaviate_client import get_weaviate_client
 from app.ai_models.embeddings import aembed_query
 
@@ -105,6 +106,7 @@ class SummaryTenantRepo:
         self.tenant_coll_update = self.collection_update.with_tenant(tenant_name)
         self.return_properties: PROPERTIES = [
             "summary",
+            "type",
             "turn",
             QueryNested(name="merged_summary", properties=["summary", "turn"]),
         ]
@@ -113,6 +115,7 @@ class SummaryTenantRepo:
         self,
         summary: str,
         turn: int | None = None,
+        summary_type: SummaryTypeEnum | None = None,
         merged_summary: list[MergedSummary] | None = None,
     ):
         """
@@ -123,6 +126,7 @@ class SummaryTenantRepo:
             properties={
                 "summary": summary,
                 "turn": turn,
+                "type": summary_type,
                 "merged_summary": merged_summary,
             },
             vector={
@@ -135,6 +139,7 @@ class SummaryTenantRepo:
         uuid: str,
         summary: str,
         turn: int | None = None,
+        summary_type: SummaryTypeEnum | None = None,
     ):
         # 更新摘要
         summary_embed = await aembed_query(summary)
@@ -143,6 +148,7 @@ class SummaryTenantRepo:
             properties={
                 "summary": summary,
                 "turn": turn,
+                "type": summary_type,
             },
             vector={
                 "vector": summary_embed,
@@ -174,7 +180,7 @@ class SummaryTenantRepo:
             sort=Sort.by_update_time(ascending=False),
             limit=limit,
             return_metadata=MetadataQuery.full(),
-            # return_properties=self.return_properties,
+            return_properties=self.return_properties,
         )
 
     async def get_summaries_offset(self, size: int = 10, page: int = 1):

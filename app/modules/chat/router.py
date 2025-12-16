@@ -10,11 +10,14 @@ router = APIRouter()
 
 
 @router.post("/common", summary="通用的模型对话接口，目前支持openai与智谱AI提供的模型")
-async def chat_common(data: ChatParamsCommon):
+async def chat_common_api(data: ChatParamsCommon):
     aiter = chat(data)
     return EventSourceResponse(aiter)
 
-@router.post("/base", summary="基础对话接口，非流式（streaming参数无效），用于支持一次性内容生成")
+
+@router.post(
+    "/base", summary="基础对话接口，非流式（streaming参数无效），用于支持一次性内容生成"
+)
 async def chat_base_api(data: ChatParamsCommon):
     """
     基础对话接口，适用于简单的对话场景。
@@ -38,6 +41,7 @@ async def chat_writer_agent_api(data: ChatParamsWriter):
     agent = WriterAgent(data)
     aiter = agent.run()
     return EventSourceResponse(aiter)
+
 
 @router.post("/summary", summary="剧情摘要接口")
 async def chat_summary_api(data: ChatParamsSummary):

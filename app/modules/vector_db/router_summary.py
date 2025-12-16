@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, Body, Query, HTTPException
 from .summary_repo import SummaryTenantRepo, SummaryTenantMgt
-from app.schema.summary import SummarySearchModeEnum
+from app.schema.summary import SummarySearchModeEnum, SummaryTypeEnum
 
 router = APIRouter()
 
@@ -55,6 +55,7 @@ async def add_summary(
     tenant_name: str,
     summary: str = Body(..., embed=True, description="摘要内容"),
     turn: int | None = Body(None, embed=True, description="对话轮次"),
+    summary_type: SummaryTypeEnum | None = Body(None, embed=True, description="摘要类型"),
 ):
     """
     新增摘要
