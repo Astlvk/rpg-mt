@@ -204,6 +204,7 @@ class SummaryTenantRepo:
                     "uuid": str(obj.uuid),
                     "summary": str(obj.properties["summary"]),
                     "turn": obj.properties.get("turn", None),
+                    "type": obj.properties.get("type", None),
                     "merged_summary": obj.properties.get("merged_summary", None),
                     "created_at": (
                         obj.metadata.creation_time.astimezone().strftime(
@@ -245,6 +246,7 @@ class SummaryTenantRepo:
                     "uuid": str(obj.uuid),
                     "summary": str(obj.properties["summary"]),
                     "turn": obj.properties.get("turn", None),
+                    "type": obj.properties.get("type", None),
                     "merged_summary": obj.properties.get("merged_summary", None),
                     "created_at": (
                         obj.metadata.creation_time.astimezone().strftime(

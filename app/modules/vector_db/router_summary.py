@@ -55,14 +55,16 @@ async def add_summary(
     tenant_name: str,
     summary: str = Body(..., embed=True, description="摘要内容"),
     turn: int | None = Body(None, embed=True, description="对话轮次"),
-    summary_type: SummaryTypeEnum | None = Body(None, embed=True, description="摘要类型"),
+    summary_type: SummaryTypeEnum | None = Body(
+        None, embed=True, description="摘要类型"
+    ),
 ):
     """
     新增摘要
     """
     try:
         repo = SummaryTenantRepo(tenant_name)
-        result = await repo.add_summary(summary, turn=turn)
+        result = await repo.add_summary(summary, turn=turn, summary_type=summary_type)
         return {"message": "摘要添加成功", "id": result}
     except Exception as e:
         logging.exception(e)
@@ -76,13 +78,18 @@ async def update_summary(
     summary_id: str,
     summary: str = Body(..., embed=True, description="摘要内容"),
     turn: int | None = Body(None, embed=True, description="对话轮次"),
+    summary_type: SummaryTypeEnum | None = Body(
+        None, embed=True, description="摘要类型"
+    ),
 ):
     """
     更新摘要
     """
     try:
         repo = SummaryTenantRepo(tenant_name)
-        await repo.update_summary(summary_id, summary, turn=turn)
+        await repo.update_summary(
+            summary_id, summary, turn=turn, summary_type=summary_type
+        )
         return {"message": f"摘要 {summary_id} 更新成功"}
     except Exception as e:
         logging.exception(e)
