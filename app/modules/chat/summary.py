@@ -17,15 +17,16 @@ async def chat_summarize(params: ChatParamsSummary):
         ),
     ] + params.messages
 
-    # 如果存在系统提示词则拼接到消息列表中
-    if params.summary_system_prompt:
-        messages = [
-            RcBaseMessage(
-                role=RoleEnum.system,
-                content=params.summary_system_prompt,
-                turn=None,
-            )
-        ] + messages
+    # # 如果存在系统提示词则拼接到消息列表中
+    # if params.summary_system_prompt:
+    #     # messages = [
+    #     #     RcBaseMessage(
+    #     #         role=RoleEnum.system,
+    #     #         content=params.summary_system_prompt,
+    #     #         turn=None,
+    #     #     )
+    #     # ] + messages
+    #     params.sys_prompt = params.summary_system_prompt
 
     params.messages = messages
 

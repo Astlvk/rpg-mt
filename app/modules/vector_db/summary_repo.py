@@ -115,7 +115,7 @@ class SummaryTenantRepo:
         self,
         summary: str,
         turn: int | None = None,
-        summary_type: SummaryTypeEnum | None = None,
+        summary_type: SummaryTypeEnum | None = SummaryTypeEnum.summary,
         merged_summary: list[MergedSummary] | None = None,
     ):
         """

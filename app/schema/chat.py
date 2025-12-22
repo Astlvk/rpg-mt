@@ -116,8 +116,8 @@ class ChatParamsWriter(ChatParamsCommon):
 class ChatParamsSummary(ChatParamsCommon):
     """摘要接口的参数模型，继承自ChatParamsCommon"""
 
-    summary_system_prompt: str | None = Field(
-        default=None,
+    sys_prompt: str = Field(
+        default="你是摘要模块的系统提示词。",
         description="摘要用系统提示词，用于指导模型生成摘要",
         examples=[
             "你是一个资深的游戏叙事设计师，擅长提炼故事核心要素。你的任务是将一段游戏对话历史，浓缩成一份结构化的记忆摘要。"
