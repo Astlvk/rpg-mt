@@ -11,11 +11,11 @@ async def chat_summarize(params: ChatParamsSummary):
     """
     摘要函数，用于总结对话内容，并向量化到向量库中
     """
-    messages = [
+    messages = params.messages + [
         RcBaseMessage(
             role=RoleEnum.user, content=params.summary_prompt, turn=params.turn
         ),
-    ] + params.messages
+    ]
 
     # # 如果存在系统提示词则拼接到消息列表中
     # if params.summary_system_prompt:
