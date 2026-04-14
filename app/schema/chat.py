@@ -76,6 +76,12 @@ class ChatParamsWriter(ChatParamsCommon):
         examples=[True],
     )
 
+    enable_deep_think: bool = Field(
+        default=False,
+        description="是否启用 deep_think 工具。",
+        examples=[False],
+    )
+
     retriever_mode: SummarySearchModeEnum = Field(
         default=SummarySearchModeEnum.similarity,
         description="检索方式",

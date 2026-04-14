@@ -28,11 +28,12 @@ class WriterAgent:
             # },
         )
         # 如果启用记忆检索，则添加记忆检索工具
-        tools = (
-            [deep_think] + [self.query_memory_wrap()]
-            if self.params.enable_retriever
-            else []
-        )
+        # Build tool list based on request flags.
+        tools = []
+        if self.params.enable_deep_think:
+            tools.append(deep_think)
+        if self.params.enable_retriever:
+            tools.append(self.query_memory_wrap())
         self.agent = create_agent(
             model=self.model,
             tools=tools,
@@ -40,7 +41,7 @@ class WriterAgent:
             debug=False,
         )
 
-    async def run(self):
+    async def run_old(self):
         # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
         messages = [msg for msg in self.params.messages if msg.role != RoleEnum.system]
 
@@ -132,6 +133,153 @@ class WriterAgent:
                 {"content": f"网络错误，请稍后重试。error: {msg}"}, ensure_ascii=False
             )
 
+    async def run(self):
+        # 过滤掉 system（防止被篡改）
+        messages = [msg for msg in self.params.messages if msg.role != RoleEnum.system]
+
+        # instruction_prompt 追加
+        if self.params.instruction_prompt:
+            messages.append(
+                RcBaseMessage(
+                    role=RoleEnum.user,
+                    content=self.params.instruction_prompt,
+                    turn=None,
+                )
+            )
+
+        # 转换为 LangChain message 格式
+        input_data = [
+            (
+                {"role": "system", "content": message.content}
+                if message.role == RoleEnum.system
+                else (
+                    {
+                        "role": "assistant",
+                        "content": message.content + f"\n[turn: {message.turn}]",
+                    }
+                    if message.role == RoleEnum.assistant
+                    else {
+                        "role": "user",
+                        "content": message.content + f"\n[turn: {message.turn}]",
+                    }
+                )
+            )
+            for message in messages
+        ]
+
+        try:
+            # =========================
+            # ✅ 流式模式（v2）
+            # =========================
+            if self.params.streaming:
+                aiter = self.agent.astream(
+                    {"messages": [*input_data]},
+                    stream_mode=["messages", "updates"],  # 同时拿token + agent进度
+                    version="v2",
+                )
+
+                async for chunk in aiter:
+                    chunk_type = chunk.get("type")
+
+                    # =========================
+                    # ✅ token 流（核心输出）
+                    # =========================
+                    if chunk_type == "messages":
+                        token, metadata = chunk["data"]
+
+                        if isinstance(token, AIMessageChunk):
+                            content_blocks = token.content_blocks
+                            for block in content_blocks:
+                                if block["type"] == "reasoning":
+                                    print("?", block)
+
+                            text = getattr(token, "text", None)
+                            if text is None:
+                                text = str(token.content or "")
+
+                            # usage 处理
+                            usage_metadata = token.usage_metadata
+                            if usage_metadata:
+                                usage_metadata = {
+                                    "inputTokens": usage_metadata.get("input_tokens"),
+                                    "outputTokens": usage_metadata.get("output_tokens"),
+                                    "totalTokens": usage_metadata.get("total_tokens"),
+                                }
+
+                            yield json.dumps(
+                                {
+                                    "content": text,
+                                    "usageMetadata": usage_metadata,
+                                },
+                                ensure_ascii=False,
+                            )
+                        else:
+                            print("not AIMessageChunk")
+                            print(token)
+
+                    # =========================
+                    # ✅ agent 过程（可选）
+                    # =========================
+                    elif chunk_type == "updates":
+                        # 这里是 tool 调用 / reasoning / step
+                        # 你可以决定是否往前端透出
+                        dx = chunk["data"]
+                        if isinstance(dx, dict):
+                            for step_name, update in dx.items():
+                                # 这里只做调试输出（避免污染前端流）
+                                print("[Agent Step]", step_name, update)
+                        else:
+                            print("not dict", type(dx))
+
+                    # =========================
+                    # ✅ 自定义流（如果用了）
+                    # =========================
+                    elif chunk_type == "custom":
+                        print("[Custom Stream]", chunk["data"])
+
+                # =========================
+                # ✅ 流结束，返回 docs
+                # =========================
+                if self.docs:
+                    yield json.dumps({"docs": self.docs}, ensure_ascii=False)
+                    self.docs = []
+
+            # =========================
+            # ✅ 非流式模式（v2）
+            # =========================
+            else:
+                result = await self.agent.ainvoke(
+                    {"messages": [*input_data]},
+                    version="v2",
+                )
+
+                # v2 返回 GraphOutput
+                final_state = result.value if hasattr(result, "value") else result
+
+                messages_out = final_state.get("messages", [])
+                last_message = messages_out[-1] if messages_out else None
+
+                if last_message:
+                    ai_text = getattr(last_message, "text", None)
+                    if ai_text is None:
+                        ai_text = str(last_message.content or "")
+                else:
+                    ai_text = ""
+
+                yield json.dumps(
+                    {"content": ai_text},
+                    ensure_ascii=False,
+                )
+
+        except Exception as e:
+            logging.exception(e)
+            msg = repr(e)
+
+            yield json.dumps(
+                {"content": f"网络错误，请稍后重试。error: {msg}"},
+                ensure_ascii=False,
+            )
+
     def query_memory_wrap(self):
         # 额外的工具描述，提供则使用
         desc = self.params.query_tool_prompt or None
@@ -200,6 +348,7 @@ class WriterAgent:
 
 
 async def chat_writer(params: ChatParamsWriter):
+    # Deprecated: legacy non-agent writer path, kept temporarily for compatibility.
     model = get_chat_model(
         model=params.model,
         api_key=params.api_key,
