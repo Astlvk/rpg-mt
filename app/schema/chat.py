@@ -76,7 +76,7 @@ class ChatParamsWriter(ChatParamsCommon):
         examples=[True],
     )
 
-    enable_deep_think: bool = Field(
+    enable_deep_think_tool: bool = Field(
         default=False,
         description="是否启用 deep_think 工具。",
         examples=[False],

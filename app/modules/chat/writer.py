@@ -30,7 +30,7 @@ class WriterAgent:
         # 如果启用记忆检索，则添加记忆检索工具
         # Build tool list based on request flags.
         tools = []
-        if self.params.enable_deep_think:
+        if self.params.enable_deep_think_tool:
             tools.append(deep_think)
         if self.params.enable_retriever:
             tools.append(self.query_memory_wrap())
@@ -41,7 +41,7 @@ class WriterAgent:
             debug=False,
         )
 
-    async def run_old(self):
+    async def run_v1(self):
         # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
         messages = [msg for msg in self.params.messages if msg.role != RoleEnum.system]
 
@@ -154,12 +154,11 @@ class WriterAgent:
                 if message.role == RoleEnum.system
                 else (
                     {
-                        "role": "assistant",
-                        "content": message.content + f"\n[turn: {message.turn}]",
-                    }
-                    if message.role == RoleEnum.assistant
-                    else {
-                        "role": "user",
+                        "role": (
+                            "assistant"
+                            if message.role == RoleEnum.assistant
+                            else "user"
+                        ),
                         "content": message.content + f"\n[turn: {message.turn}]",
                     }
                 )
@@ -168,9 +167,6 @@ class WriterAgent:
         ]
 
         try:
-            # =========================
-            # ✅ 流式模式（v2）
-            # =========================
             if self.params.streaming:
                 aiter = self.agent.astream(
                     {"messages": [*input_data]},
@@ -180,22 +176,18 @@ class WriterAgent:
 
                 async for chunk in aiter:
                     chunk_type = chunk.get("type")
+                    # print("chunk_type", chunk_type)
 
-                    # =========================
-                    # ✅ token 流（核心输出）
-                    # =========================
                     if chunk_type == "messages":
                         token, metadata = chunk["data"]
 
                         if isinstance(token, AIMessageChunk):
-                            content_blocks = token.content_blocks
-                            for block in content_blocks:
-                                if block["type"] == "reasoning":
-                                    print("?", block)
-
-                            text = getattr(token, "text", None)
-                            if text is None:
-                                text = str(token.content or "")
+                            text = token.text or token.content or ""
+                            reasoning = token.additional_kwargs.get(
+                                "reasoning_content", ""
+                            )
+                            if reasoning:
+                                print(reasoning, end="")
 
                             # usage 处理
                             usage_metadata = token.usage_metadata
@@ -209,17 +201,16 @@ class WriterAgent:
                             yield json.dumps(
                                 {
                                     "content": text,
+                                    "thinking": reasoning,
                                     "usageMetadata": usage_metadata,
                                 },
                                 ensure_ascii=False,
                             )
                         else:
-                            print("not AIMessageChunk")
-                            print(token)
+                            print("not AIMessageChunk", end="：")
+                            print("token type", type(token))
+                            print("token", token)
 
-                    # =========================
-                    # ✅ agent 过程（可选）
-                    # =========================
                     elif chunk_type == "updates":
                         # 这里是 tool 调用 / reasoning / step
                         # 你可以决定是否往前端透出
@@ -227,44 +218,23 @@ class WriterAgent:
                         if isinstance(dx, dict):
                             for step_name, update in dx.items():
                                 # 这里只做调试输出（避免污染前端流）
-                                print("[Agent Step]", step_name, update)
+                                print("\n[Agent Step]", step_name, update)
                         else:
                             print("not dict", type(dx))
 
-                    # =========================
-                    # ✅ 自定义流（如果用了）
-                    # =========================
                     elif chunk_type == "custom":
                         print("[Custom Stream]", chunk["data"])
 
-                # =========================
-                # ✅ 流结束，返回 docs
-                # =========================
                 if self.docs:
                     yield json.dumps({"docs": self.docs}, ensure_ascii=False)
                     self.docs = []
-
-            # =========================
-            # ✅ 非流式模式（v2）
-            # =========================
             else:
                 result = await self.agent.ainvoke(
                     {"messages": [*input_data]},
                     version="v2",
                 )
 
-                # v2 返回 GraphOutput
-                final_state = result.value if hasattr(result, "value") else result
-
-                messages_out = final_state.get("messages", [])
-                last_message = messages_out[-1] if messages_out else None
-
-                if last_message:
-                    ai_text = getattr(last_message, "text", None)
-                    if ai_text is None:
-                        ai_text = str(last_message.content or "")
-                else:
-                    ai_text = ""
+                ai_text = result.value.get("messages", [])[-1].content
 
                 yield json.dumps(
                     {"content": ai_text},
@@ -345,56 +315,6 @@ class WriterAgent:
                 return "检索出错！"
 
         return query_memory
-
-
-async def chat_writer(params: ChatParamsWriter):
-    # Deprecated: legacy non-agent writer path, kept temporarily for compatibility.
-    model = get_chat_model(
-        model=params.model,
-        api_key=params.api_key,
-        base_url=params.base_url,
-        temperature=params.temperature,
-        max_tokens=params.max_tokens,
-        extra_body={
-            "thinking": {
-                "type": "disabled",
-            },
-        },
-    )
-
-    # 过滤掉消息列表内的system角色（防止通过messages参数篡改system）
-    messages = [
-        RcBaseMessage(role=RoleEnum.system, content=params.sys_prompt, turn=None)
-    ] + [msg for msg in params.messages if msg.role != RoleEnum.system]
-
-    # 需要把messages转换为BaseMessage
-    input_data = [
-        (
-            SystemMessage(content=message.content)
-            if message.role == RoleEnum.system
-            else (
-                AIMessage(content=message.content)
-                if message.role == RoleEnum.assistant
-                else HumanMessage(content=message.content)
-            )
-        )
-        for message in messages
-    ]
-
-    try:
-        if params.streaming:
-            aiter = model.astream(input_data)
-            async for item in aiter:
-                yield json.dumps({"content": item.content}, ensure_ascii=False)
-        else:
-            content = await model.ainvoke(input_data)
-            yield json.dumps({"content": content.content}, ensure_ascii=False)
-    except Exception as e:
-        logging.exception(e)
-        msg = repr(e)
-        yield json.dumps(
-            {"content": f"网络错误，请稍后重试。error: {msg}"}, ensure_ascii=False
-        )
 
 
 if __name__ == "__main__":
