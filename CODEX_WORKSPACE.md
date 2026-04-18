@@ -3,7 +3,7 @@
 ## Projects
 
 - Backend repo: `E:\AI\rpg-mt`
-- Frontend repo: `D:\Astlvk\project\luban\rpg-mt-client`
+- Frontend repo: `E:\AI\rpg-mt-client`
 
 ## Branches
 
