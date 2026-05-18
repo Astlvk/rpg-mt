@@ -22,7 +22,7 @@ async def get_all_tenants():
 
 @router.post("/summary/tenants", summary="新增租户")
 async def create_tenant(
-    tenant_name: str = Body(..., embed=True, description="租户名称")
+    tenant_name: str = Body(..., embed=True, description="租户名称"),
 ):
     """
     新增租户

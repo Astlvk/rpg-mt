@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import cast
-from langchain.messages import HumanMessage, SystemMessage, AIMessage, AIMessageChunk
+from langchain.messages import AIMessageChunk
 from langchain.tools import tool
 from langchain.agents import create_agent
 from app.schema.chat import ChatParamsWriter, RcBaseMessage, RoleEnum
@@ -61,15 +61,15 @@ class WriterAgent:
                 # SystemMessage(content=message.content)
                 {"role": "system", "content": message.content}
                 if message.role == RoleEnum.system
+                # AIMessage(content=message.content)
                 else (
-                    # AIMessage(content=message.content)
                     {
                         "role": "assistant",
                         "content": message.content + f"\n[turn: {message.turn}]",
                     }
                     if message.role == RoleEnum.assistant
+                    # HumanMessage(content=message.content)
                     else (
-                        # HumanMessage(content=message.content)
                         {
                             "role": "user",
                             "content": message.content + f"\n[turn: {message.turn}]",

@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Body, Request, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 from app.ai_models.embeddings import aembed_documents, aembed_query
 
 router = APIRouter()
@@ -7,7 +7,7 @@ router = APIRouter()
 
 @router.post("/embed/documents", summary="批量文本转向量")
 async def embed_documents(
-    texts: list[str] = Body(..., examples=[["你好", "世界"]], embed=True)
+    texts: list[str] = Body(..., examples=[["你好", "世界"]], embed=True),
 ):
     """
     批量将文本转为向量

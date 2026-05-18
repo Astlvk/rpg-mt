@@ -4,7 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from app.schema.chat import ChatParamsSummary, RcBaseMessage, RoleEnum
 from app.modules.vector_db.summary_repo import SummaryTenantRepo
 from .common import chat_base
-from app.schema.summary import SummaryDataModel, MergedSummary
+from app.schema.summary import MergedSummary
 
 
 async def chat_summarize(params: ChatParamsSummary):

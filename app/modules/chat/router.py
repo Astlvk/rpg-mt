@@ -9,7 +9,9 @@ from app.modules.chat.summary import chat_summarize
 router = APIRouter()
 
 
-@router.post("/common", summary="通用的模型对话接口，目前支持openai与智谱AI提供的模型")
+@router.post(
+    "/common", summary="通用的模型对话接口，目前支持 OpenAI 与 DeepSeek 提供的模型"
+)
 async def chat_common_api(data: ChatParamsCommon):
     aiter = chat(data)
     return EventSourceResponse(aiter)

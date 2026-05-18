@@ -1,0 +1,25 @@
+{
+  "include": [
+    "app",
+    "tests",
+    "alembic",
+    "run_dev.py",
+    "run_prod.py"
+  ],
+  "exclude": [
+    ".venv",
+    ".pytest_cache",
+    ".ruff_cache"
+  ],
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "standard",
+  "reportMissingTypeStubs": "warning",
+  "reportUnknownMemberType": "warning",
+  "reportUnknownVariableType": "warning",
+  "reportUnknownArgumentType": "warning",
+  "reportUnknownLambdaType": false,
+  "reportUnknownParameterType": "warning",
+  "reportAny": "warning"
+}

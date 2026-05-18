@@ -1,7 +1,5 @@
 from typing import Any
-from langchain.chat_models import BaseChatModel
-from langchain_openai import ChatOpenAI
-from langchain.chat_models import init_chat_model
+from langchain.chat_models import BaseChatModel, init_chat_model
 from dotenv import load_dotenv
 
 
@@ -22,6 +20,6 @@ def get_chat_model(
 
 if __name__ == "__main__":
     load_dotenv()
-    # model = get_chat_model("glm-4.5-flash")
+    # model = get_chat_model("gpt-4.1-mini", api_key="...", base_url="https://api.openai.com/v1")
     # response = model.invoke("你好")
     # print(response)

@@ -1,29 +1,17 @@
 from typing import List
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from .message import RoleEnum, RcBaseMessage
-from .models_enum import (
-    GptModelEnum,
-    ZhipuAIModelEnum,
-    DeepSeekModelEnum,
-    QwenModelEnum,
-    GeminiModelEnum,
-)
+from .models_enum import GptModelEnum, DeepSeekModelEnum
 from .summary import SummarySearchModeEnum
 
 
 class ChatParamsCommon(BaseModel):
     """通用的chat model参数模型，用于支持多个平台模型入参"""
 
-    model: (
-        GptModelEnum
-        | ZhipuAIModelEnum
-        | DeepSeekModelEnum
-        | QwenModelEnum
-        | GeminiModelEnum
-    ) = Field(
-        default=ZhipuAIModelEnum.glm45flash,
-        description="模型名称，目前支持openai与智谱AI提供的模型",
-        examples=[ZhipuAIModelEnum.glm45flash],
+    model: GptModelEnum | DeepSeekModelEnum = Field(
+        default=GptModelEnum.gpt41mini,
+        description="模型名称，目前支持 OpenAI 与 DeepSeek 提供的模型",
+        examples=[GptModelEnum.gpt41mini],
     )
 
     api_key: str = Field(
@@ -34,7 +22,7 @@ class ChatParamsCommon(BaseModel):
     base_url: str = Field(
         default="",
         description="API地址，用于调用模型",
-        examples=["https://open.bigmodel.cn/api/paas/v4/"],
+        examples=["https://api.openai.com/v1", "https://api.deepseek.com"],
     )
     sys_prompt: str = Field(
         default="你是一个乐于助人的智能助理。",
@@ -51,9 +39,7 @@ class ChatParamsCommon(BaseModel):
             ]
         ],
     )
-    temperature: float = Field(
-        default=0.9, description="模型温度，取值0.0 ~ 1.0，智谱模型该参数不支持取0或1"
-    )
+    temperature: float = Field(default=0.9, description="模型温度，取值 0.0 ~ 1.0")
     max_tokens: int = Field(default=65536, description="最大令牌数", examples=[65536])
     streaming: bool = Field(default=True, description="是否启用流式处理")
     # stop: List[str] = []

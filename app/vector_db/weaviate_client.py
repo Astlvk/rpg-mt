@@ -6,7 +6,7 @@ Weaviate 客户端
 import os
 import weaviate
 import logging
-from weaviate.client import WeaviateClient, WeaviateAsyncClient
+from weaviate.client import WeaviateAsyncClient
 from weaviate.connect import ConnectionParams
 from weaviate.classes.init import Auth, AdditionalConfig, Timeout
 

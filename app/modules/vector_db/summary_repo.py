@@ -1,4 +1,3 @@
-from warnings import deprecated
 from uuid import UUID
 from weaviate.classes.config import DataType, Property
 from weaviate.classes.tenants import Tenant

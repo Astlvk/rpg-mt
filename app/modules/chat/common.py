@@ -85,7 +85,7 @@ async def chat_base(params: ChatParamsCommon):
     content = await model.ainvoke(input_data)
 
     print("summary", content)
-    
+
     return content.content
 
 

@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Body, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException
 from .collection_service import CollectionService
 
 router = APIRouter()
@@ -9,7 +9,7 @@ router = APIRouter()
 async def get_all_collections(
     detailed: bool = Query(
         default=False, description="是否返回详细信息， 默认否", examples=[False, True]
-    )
+    ),
 ):
     """
     获取所有集合

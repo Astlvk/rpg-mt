@@ -1,5 +1,3 @@
-import logging
-from fastapi import APIRouter, Body, Request
-from app.configs import env
+from fastapi import APIRouter
 
 router = APIRouter()
